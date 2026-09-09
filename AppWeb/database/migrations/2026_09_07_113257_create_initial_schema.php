@@ -59,7 +59,7 @@ return new class extends Migration {
                 $table->string('name', 100);
                 $table->string('lastname', 100);
                 $table->string('phone', 20)->nullable();
-                $table->string('email', 150)->nullable()->unique();
+                $table->string('dpi', 14)->nullable();
                 $table->timestamps();
             });
 
@@ -81,18 +81,35 @@ return new class extends Migration {
                 $table->timestamps();
             });
 
-            // 8. Tickets de Reparación (Core Operativo)
+            // 8. Tickets de Reparación
             Schema::create('tickets', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('id_user_receptionist')->constrained('users')->onUpdate('cascade')->onDelete('restrict');
                 $table->foreignId('id_device')->constrained('devices')->onUpdate('cascade')->onDelete('cascade');
                 $table->foreignId('id_user_technician')->nullable()->constrained('users')->onUpdate('cascade')->onDelete('set null');
-                $table->enum('state', ['RECIBIDO', 'DIAGNÓSTICO', 'REPARACIÓN', 'FINALIZADO', 'ENTREGADO'])->default('RECIBIDO');
-                $table->text('reported_issue');
-                $table->decimal('total_charged', 10, 2)->default(0.00);
-                $table->text('technical_diagnosis')->nullable();
-                $table->timestamp('intake_date')->useCurrent();
+                $table->enum('state', [
+                    'Recibido',
+                    'Diagnóstico',
+                    'Reparación',
+                    'Finalizado',
+                    'Entregado'
+                ])->default('Recibido');
+
+                // Problema reportado y datos de acceso
+                $table->text('reported_issue'); // Falla reportada
+                $table->string('device_password', 100)->nullable(); // Contraseña / PIN / Patrón
+                $table->text('reception_notes')->nullable(); // Observaciones iniciales (golpes, estado estético)
+                $table->text('technical_diagnosis')->nullable(); // Diagnóstico del técnico
+
+                // Estructura de Cobro
+                $table->decimal('total_charged', 10, 2)->default(0.00); // Precio total pactado
+                $table->decimal('deposit', 10, 2)->default(0.00); // Anticipo entregado
+                // Columna calculada de saldo para PostgreSQL (total_charged - deposit)
+                $table->decimal('remaining_balance', 10, 2)->virtualAs('total_charged - deposit');
+
+                // Trazabilidad y Fechas
                 $table->uuid('qr_token')->unique();
+                $table->timestamp('intake_date')->useCurrent();
                 $table->timestamp('return_date')->nullable();
                 $table->timestamps();
             });
