@@ -1,0 +1,168 @@
+/* Estilos Específicos del Módulo de Gestión de Usuarios (CelIx) */
+
+/* Métricas Rápidas (Stat Cards) */
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.icon-primary {
+    background-color: rgba(237, 28, 36, 0.1);
+    color: var(--color-primary);
+}
+
+.icon-success {
+    background-color: var(--badge-success-bg);
+    color: var(--color-success);
+}
+
+.icon-warning {
+    background-color: var(--badge-warning-bg);
+    color: var(--color-warning);
+}
+
+/* Tabla de Usuarios */
+.th-actions {
+    text-align: right;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #E5E7EB;
+    color: #374151;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Badges de Estado y Roles */
+.badge-active {
+    background-color: var(--badge-success-bg);
+    color: var(--badge-success-text);
+}
+
+.badge-inactive {
+    background-color: var(--badge-error-bg);
+    color: var(--badge-error-text);
+}
+
+.badge-admin {
+    background-color: var(--badge-role-admin-bg);
+    color: var(--badge-role-admin-text);
+}
+
+.badge-recep {
+    background-color: var(--badge-role-rec-bg);
+    color: var(--badge-role-rec-text);
+}
+
+.badge-tech {
+    background-color: var(--badge-role-tec-bg);
+    color: var(--badge-role-tec-text);
+}
+
+/* Botones de Acción en Fila */
+.btn-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background-color: #FFFFFF;
+    color: var(--color-text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-action:hover {
+    background-color: #F3F4F6;
+    color: var(--color-primary);
+    border-color: #D1D5DB;
+}
+
+.btn-action-key:hover {
+    background-color: rgba(237, 28, 36, 0.08);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.btn-action-toggle:hover {
+    background-color: #FEF3C7;
+    color: var(--color-warning);
+    border-color: #FCD34D;
+}
+
+.toggle-icon-active {
+    color: var(--color-success);
+    font-size: 1.1rem;
+}
+
+.toggle-icon-inactive {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+}
+
+/* Campo de Contraseña con Botón para Alternar Visibilidad */
+.input-password-wrapper .btn-toggle-input-pwd {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+}
+
+.input-password-wrapper .btn-toggle-input-pwd:hover {
+    color: var(--color-text-main);
+}
+
+/* Modal de Cambio de Estado */
+.toggle-state-dialog {
+    max-width: 480px;
+}
+
+.status-confirm-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.status-confirm-icon-wrapper.is-deactivating {
+    background-color: #FEE2E2;
+    color: var(--color-error);
+}
+
+.status-confirm-icon-wrapper.is-activating {
+    background-color: var(--badge-success-bg);
+    color: var(--badge-success-text);
+}
+
+.status-user-target {
+    font-size: 13.5px;
+    color: var(--color-primary-dark);
+    background-color: #F9FAFB;
+    border: 1px solid var(--color-border);
+    padding: 0.35rem 0.65rem;
+    border-radius: 4px;
+    display: inline-block;
+    word-break: break-word;
+}

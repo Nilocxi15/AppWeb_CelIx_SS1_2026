@@ -1,7 +1,7 @@
 ---
 name: frontend-celix-design
 description: >-
-  Use this skill whenever the user requests frontend development, UI components, HTML, CSS, Blade templates, views, forms, buttons, tables, cards, navigation bars, or layout design for the CelIx project. Enforces the CelIx brand color palette, typography hierarchy, component styling rules, Bootstrap Icons, strict separation of CSS styles into global or component-specific CSS files, and mandatory responsive design across all devices (mobile, tablet, desktop).
+  Use this skill whenever the user requests frontend development, UI components, HTML, CSS, Blade templates, views, forms, buttons, tables, cards, navigation bars, or layout design for the CelIx project. Enforces the CelIx brand color palette, typography hierarchy, component styling rules, Bootstrap Icons, Bootstrap CSS utilities and JS components to reduce boilerplate, strict separation of CSS styles into global or component-specific CSS files, strict separation of JavaScript code into public JS files, mandatory responsive design across all devices (mobile, tablet, desktop), and modular architecture (layouts, reusable components, and views).
 ---
 
 # CelIx Frontend & Design System Skill
@@ -166,4 +166,74 @@ Todo el contenido, componentes, vistas y plantillas Blade deben ser **completame
   5. **Tipografía e Imágenes:**
      * Los tamaños de títulos y textos deben reducirse proporcionalmente en móviles usando media queries o unidades fluidas para evitar quiebres de línea agresivos.
      * Todas las imágenes, logotipos y gráficos SVG deben tener `max-width: 100%; height: auto; display: block;`.
+
+---
+
+## 8. Modularización y Arquitectura Blade (Layouts, Componentes y Vistas)
+
+Para garantizar la mantenibilidad del código, evitar archivos excesivamente largos o monolíticos y maximizar la reutilización (DRY), el desarrollo de frontend en Blade debe estructurarse de manera modular:
+
+* **Estructura de Directorios Obligatoria (`resources/views/`):**
+  * **`resources/views/layouts/` (Plantillas Maestras):**
+    * Contienen la estructura base del documento HTML (`<!DOCTYPE html>`, `<head>`, metaetiquetas, fuentes del sistema, enlaces a Bootstrap Icons, enlaces a CSS globales/específicos y directivas `@yield('content')` o `{{ $slot }}`).
+    * Evitar duplicar la cabecera HTML, apertura del `<body>` o scripts en cada vista individual.
+  * **`resources/views/components/` (Componentes Reutilizables):**
+    * Bloques de interfaz autónomos y reciclables que pueden invocarse mediante `<x-nombre-componente />` o `@include('components.nombre-componente')`.
+    * **Elementos requeridos para modularizar cuando aplique:**
+      * **Barras de Navegación (`navbar.blade.php`):** Debe modularizarse como componente para reutilizarse en todas las vistas públicas o privadas correspondientes.
+      * **Pies de página (`footer.blade.php`):** Extraer los copyrights y enlaces legales a su propio componente.
+      * **Logos y Marca (`brand-logo.blade.php`):** Centralizar la representación visual del isotipo y logotipo corporativo de CelIx.
+      * **Alertas y Feedback (`alert.blade.php`):** Manejo uniforme de mensajes de éxito, advertencia y error.
+      * **Tarjetas o Envoltorios de Formulario:** Estructuras recurrentes (como cajas divididas o modales).
+  * **`resources/views/<seccion>/` (Vistas de Negocio):**
+    * Organizadas por dominio o función (ej. `resources/views/public/`, `resources/views/auth/`, `resources/views/admin/`).
+    * Deben extender de un layout maestro (`@extends('layouts....')`) e incluir los componentes necesarios, manteniéndose concisas y enfocadas en la lógica propia de la pantalla.
+
+* **Criterios para Aplicar Modularización:**
+  * **Elemento repetido en 2 o más vistas:** Extraer inmediatamente a componente o layout.
+  * **Vistas extensas o complejas:** Si un archivo supera un tamaño que dificulte su lectura o mantenimiento, descomponer las secciones visuales lógicas en subcomponentes o vistas parciales (`@include`).
+
+---
+
+## 9. Separación Estricta de Scripts JavaScript (Obligatorio)
+
+Para asegurar la correcta separación de responsabilidades, el mantenimiento escalable y la limpieza del código:
+
+* **Prohibido incrustar código JavaScript en las vistas:** Nunca incluir bloques `<script>` con lógica o código inline directamente dentro de las plantillas o vistas Blade (`.blade.php`).
+* **Separación en archivos `.js` dedicados:**
+  * Todo código JavaScript debe residir en archivos externos específicos dentro del directorio público de scripts (`public/js/`), debidamente estructurados por dominio o módulo funcional:
+    * `public/js/auth/`: Scripts de autenticación y recuperación de cuenta (ej. `login.js`, `recover-password.js`).
+    * `public/js/admin/`: Scripts de administración, dashboards y CRUDs (ej. `admin-navbar.js`, `users.js`).
+    * `public/js/components/`: Scripts asociados a componentes reutilizables cuando aplique.
+* **Vinculación en Blade:**
+  * Cargar los scripts utilizando la directiva asset: `<script src="{{ asset('js/...') }}"></script>`.
+  * En vistas que extienden de layouts maestros con pilas (`@stack('scripts')`), vincular el script específico mediante `@push('scripts') <script src="{{ asset('js/...') }}"></script> @endpush`.
+
+---
+
+## 10. Uso de Bootstrap para Reducción de Reglas CSS y Código JS
+
+Se permite y promueve el uso de las clases de utilidad y componentes de **Bootstrap** para acelerar el desarrollo, reducir la cantidad de reglas CSS personalizadas en archivos externos y disminuir la necesidad de código JavaScript manual:
+
+### A. Clases de Utilidad y Componentes CSS de Bootstrap
+* **Grid y Flexbox:** Emplear las clases nativas de Bootstrap para alineación y maquetación (`container`, `row`, `col-*`, `d-flex`, `flex-column`, `flex-wrap`, `justify-content-*`, `align-items-*`, `gap-*`, etc.) en lugar de declarar reglas CSS repetitivas en archivos externos.
+* **Espaciado y Tipografía:** Aprovechar las utilidades estándar de margen y padding (`m-*`, `p-*`, `mb-3`, `me-2`, etc.), alineación (`text-center`, `text-end`), y pesos tipográficos (`fw-bold`, `fw-semibold`, `fs-6`).
+* **Componentes Base:** Se pueden utilizar clases estructurales de Bootstrap como `table`, `table-responsive`, `table-hover`, `card`, `card-body`, `badge`, `form-control`, `form-select`, `modal`, `modal-dialog`, `alert`, etc.
+
+### B. Componentes Interactivos y JavaScript de Bootstrap
+* **Menús, Modales y Desplegables:** Se puede aprovechar la API oficial de Bootstrap JS (ej. `new bootstrap.Modal(...)`, `bootstrap.Collapse`) y sus atributos de datos (`data-bs-toggle="modal"`, `data-bs-dismiss="modal"`, `data-bs-target="..."`) para evitar escribir lógica manual de manipulación de DOM, backdrop o listeners de teclado en JavaScript.
+* **Ubicación del JS:** Cualquier script que inicialice o configure componentes de Bootstrap debe ubicarse en los archivos dedicados dentro de `public/js/`, respetando la separación estricta de scripts.
+
+### C. REGLA INQUEBRANTABLE: Respeto Estricto a los Estilos Iniciales de CelIx
+El uso de Bootstrap es una herramienta de optimización y reducción de código; **bajo ninguna circunstancia reemplaza ni degrada la identidad visual y directrices obligatorias de CelIx**:
+1. **Paleta de Marca CelIx (Prohibido el azul por defecto de Bootstrap):**
+   * El color primario del proyecto es **Rojo CelIx (`#ED1C24`)** con hover `#C9141C`. Las clases `btn-primary`, enlaces activos, bordes de foco (`focus-ring`), switches activos o badges primarios deben sobrescribirse o personalizarse para mantener el rojo corporativo (`#ED1C24`), jamás utilizar el azul estándar (`#0d6efd`) de Bootstrap.
+   * Respetar rigurosamente los colores de fondo (`#F5F5F5`), superficie (`#FFFFFF`), texto principal (`#171717`), texto secundario (`#6B7280`) y bordes (`#E5E5E5`).
+2. **Tipografía del Sistema:** Debe mantenerse la tipografía sans-serif del sistema (`system-ui, -apple-system, Segoe UI, Roboto...`).
+3. **Cero Emojis y Uso Exclusivo de Bootstrap Icons:** Todo ícono debe ser de Bootstrap Icons (`bi bi-*`). Prohibido terminantemente el uso de emojis.
+4. **Prohibición de Estilos Inline en HTML:** No utilizar `style="..."` en las etiquetas HTML/Blade. Si una clase de Bootstrap requiere personalización o ajuste fino, debe aplicarse mediante una clase CSS en su respectivo archivo `.css`.
+5. **Separación de Archivos CSS y JS:** Toda regla de estilo personalizada o sobrescritura debe residir en sus respectivos archivos CSS (`public/css/`), y todo script en sus archivos JS (`public/js/`).
+6. **Diseño Responsivo Obligatorio:** Garantizar que todo layout, tabla, modal y formulario sea 100% responsivo y táctil en móviles, tablets y escritorios.
+
+
 

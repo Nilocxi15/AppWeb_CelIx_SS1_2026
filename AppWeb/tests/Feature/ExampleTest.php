@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * A basic test example.
      */
@@ -21,7 +23,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/ruta-inexistente-12345');
 
-        $response->assertStatus(200);
+        $response->assertStatus(404);
         $response->assertSee('Página no encontrada');
         $response->assertSee('Error 404');
     }
@@ -39,4 +41,38 @@ class ExampleTest extends TestCase
         $response->assertSee('Código de Verificación');
         $response->assertSee('Confirmar cambio de contraseña');
     }
+
+    public function test_admin_dashboard_loads_for_authenticated_admin(): void
+    {
+        $admin = \App\Models\User::first();
+
+        $response = $this->actingAs($admin)->get('/admin');
+
+        $response->assertStatus(200);
+        $response->assertSee('Inicio');
+        $response->assertSee('Gestión de Usuarios');
+        $response->assertSee('Cel');
+    }
+
+    public function test_admin_users_index_loads_with_crud_elements(): void
+    {
+        $admin = \App\Models\User::first();
+
+        $response = $this->actingAs($admin)->get('/admin/users');
+
+        $response->assertStatus(200);
+        $response->assertSee('Gestión de Usuarios');
+        $response->assertSee('Total Usuarios');
+        $response->assertSee('Usuarios Activos');
+        $response->assertSee('Nuevo Usuario');
+        $response->assertSee('Anterior');
+        $response->assertSee('Siguiente');
+        $response->assertSee('Mostrando');
+        $response->assertSee('5 registros');
+        $response->assertSee('25 registros');
+        $response->assertSee('50 registros');
+        $response->assertSee('Cambiar Contraseña de Usuario');
+        $response->assertDontSee('¿Eliminar este usuario?');
+    }
 }
+

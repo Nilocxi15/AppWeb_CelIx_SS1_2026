@@ -1,0 +1,154 @@
+/* ==========================================================================
+   Variables de Tema CelIx y Sobrescritura de Bootstrap 5
+   ========================================================================== */
+:root {
+    /* Marca y Énfasis CelIx */
+    --color-primary: #ED1C24;
+    --color-primary-dark: #C9141C;
+
+    /* Sobrescritura de Variables Bootstrap 5 para Identidad CelIx */
+    --bs-primary: #ED1C24;
+    --bs-primary-rgb: 237, 28, 36;
+    --bs-link-color: #ED1C24;
+    --bs-link-hover-color: #C9141C;
+    --bs-focus-ring-color: rgba(237, 28, 36, 0.25);
+    --bs-body-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --bs-body-bg: #F5F5F5;
+    --bs-body-color: #171717;
+    --bs-border-color: #E5E5E5;
+
+    /* Superficies y Fondos */
+    --color-bg: #F5F5F5;
+    --color-surface: #FFFFFF;
+
+    /* Texto */
+    --color-text-main: #171717;
+    --color-text-muted: #6B7280;
+
+    /* Bordes y Divisores */
+    --color-border: #E5E5E5;
+
+    /* Estados y Feedback */
+    --color-success: #16A34A;
+    --color-warning: #D97706;
+    --color-error: #DC2626;
+
+    /* Badges CelIx */
+    --badge-success-bg: #DCFCE7;
+    --badge-success-text: #166534;
+    --badge-warning-bg: #FEF3C7;
+    --badge-warning-text: #92400E;
+    --badge-error-bg: #FEE2E2;
+    --badge-error-text: #991B1B;
+    --badge-role-admin-bg: #FEE2E2;
+    --badge-role-admin-text: #991B1B;
+    --badge-role-rec-bg: #DBEAFE;
+    --badge-role-rec-text: #1E40AF;
+    --badge-role-tec-bg: #FEF3C7;
+    --badge-role-tec-text: #92400E;
+}
+
+body {
+    font-family: var(--bs-body-font-family);
+    background-color: var(--color-bg);
+    color: var(--color-text-main);
+}
+
+/* ==========================================================================
+   Sobrescrituras Globales de Componentes Bootstrap para CelIx
+   ========================================================================== */
+.btn-primary {
+    --bs-btn-bg: var(--color-primary);
+    --bs-btn-border-color: var(--color-primary);
+    --bs-btn-hover-bg: var(--color-primary-dark);
+    --bs-btn-hover-border-color: var(--color-primary-dark);
+    --bs-btn-active-bg: #A81017;
+    --bs-btn-active-border-color: #A81017;
+    --bs-btn-focus-shadow-rgb: 237, 28, 36;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--color-primary);
+    --bs-btn-border-color: var(--color-primary);
+    --bs-btn-hover-bg: var(--color-primary);
+    --bs-btn-hover-border-color: var(--color-primary);
+    --bs-btn-active-bg: var(--color-primary-dark);
+    --bs-btn-active-border-color: var(--color-primary-dark);
+}
+
+.text-primary {
+    color: var(--color-primary) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.25rem rgba(237, 28, 36, 0.15);
+}
+
+.form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.pagination {
+    --bs-pagination-active-bg: var(--color-primary);
+    --bs-pagination-active-border-color: var(--color-primary);
+    --bs-pagination-color: var(--color-text-main);
+    --bs-pagination-hover-color: var(--color-primary);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(237, 28, 36, 0.15);
+}
+
+/* ==========================================================================
+   Barra de Navegación del Administrador (Admin Navbar)
+   ========================================================================== */
+.brand-link {
+    text-decoration: none;
+}
+
+.brand-badge {
+    background-color: var(--color-primary);
+    color: #FFFFFF;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    font-size: 1.1rem;
+}
+
+.brand-highlight {
+    color: var(--color-primary);
+}
+
+.user-avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.role-badge-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 50px;
+    background-color: var(--badge-role-admin-bg);
+    color: var(--badge-role-admin-text);
+}
+
+.navbar-logout-form {
+    display: inline;
+}
+
+/* ==========================================================================
+   Alertas Personalizadas
+   ========================================================================== */
+.alert-errors-list {
+    margin: 0.25rem 0 0 1rem;
+    padding: 0;
+}
