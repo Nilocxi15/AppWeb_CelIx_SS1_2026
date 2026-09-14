@@ -169,6 +169,17 @@ return new class extends Migration {
                 $table->timestamp('date')->useCurrent();
                 $table->timestamps();
             });
+
+            // 14. Códigos de Recuperación de Contraseña
+            Schema::create('password_reset_codes', function (Blueprint $table) {
+                $table->id();
+                $table->string('email', 150)->index();
+                $table->foreign('email')->references('email')->on('users')->onUpdate('cascade')->onDelete('restrict');
+                $table->string('code', 255);
+                $table->timestamp('expires_at');
+                $table->boolean('is_used')->default(false);
+                $table->timestamps();
+            });
         });
     }
 
@@ -178,6 +189,7 @@ return new class extends Migration {
     public function down(): void
     {
         DB::transaction(function () {
+            Schema::dropIfExists('password_reset_codes');
             Schema::dropIfExists('financial_transactions');
             Schema::dropIfExists('inventory_movements');
             Schema::dropIfExists('sale_details');
