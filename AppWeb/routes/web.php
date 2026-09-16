@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ReceptionistController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas exclusivas para invitados (usuarios no autenticados)
@@ -22,9 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); // Ruta para cerrar sesión
 
     // Panel Recepcionista
-    Route::get('/recepcion', function () {
-        return 'Panel de Recepción - Bienvenido, ' . auth()->user()->name;
-    })->name('receptionist.home');
+    Route::get('/recepcion', [ReceptionistController::class, 'home'])->name('receptionist.home');
+    Route::post('/recepcion/ventas', [ReceptionistController::class, 'storeSale'])->name('receptionist.sales.store');
 
     // Panel Técnico
     Route::get('/tecnico', function () {
@@ -33,7 +33,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Rutas protegidas para Administrador (sólo con sesión activa)
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:ADMINISTRADOR'])->prefix('admin')->name('admin.')->group(function () {
     // Rutas para el módulo de home-dashboard
     // Vista principal del panel de administración (dashboard)
     Route::get('/', [AdminController::class, 'home']);
@@ -57,6 +57,18 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // Activar / Desactivar usuario
     Route::patch('/users/{id}/toggle-state', [AdminController::class, 'toggleUserState'])->name('users.toggle-state');
+});
+
+// Rutas protegidas para Recepcionista (sólo con sesión activa)
+Route::middleware(['auth', 'role:ADMINISTRADOR, RECEPCIONISTA'])->prefix('receptionist')->name('receptionist.')->group(function () {
+    /**
+     * Rutas para el módulo de la página de inicio
+     */
+    // Vista principal del panel de recepcionista
+    Route::get('/reception', [ReceptionistController::class, 'home'])->name('home');
+
+    // Guardar venta (multi-artículos)
+    Route::post('/sales', [ReceptionistController::class, 'storeSale'])->name('sales.store');
 });
 
 // Ruta pública de error 404

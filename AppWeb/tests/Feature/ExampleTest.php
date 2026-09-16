@@ -74,5 +74,26 @@ class ExampleTest extends TestCase
         $response->assertSee('Cambiar Contraseña de Usuario');
         $response->assertDontSee('¿Eliminar este usuario?');
     }
+
+    public function test_receptionist_home_loads_with_required_elements(): void
+    {
+        $user = \App\Models\User::first();
+
+        $response = $this->actingAs($user)->get('/recepcion');
+
+        $response->assertStatus(200);
+        $response->assertSee('Registrar Dispositivo');
+        $response->assertSee('Registrar Venta');
+        $response->assertSee('Inicio');
+        $response->assertSee('Inventario');
+        $response->assertSee('Historiales');
+        $response->assertSee('Perfil');
+        $response->assertSee('Cerrar Sesión');
+        $response->assertSee('Catálogo de Productos para Venta');
+        $response->assertSee('Cargador Rápido 25W');
+        $response->assertSee('Anterior');
+        $response->assertSee('Siguiente');
+    }
 }
+
 

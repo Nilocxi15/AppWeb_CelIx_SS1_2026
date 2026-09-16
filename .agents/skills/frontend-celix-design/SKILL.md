@@ -1,7 +1,7 @@
 ---
 name: frontend-celix-design
 description: >-
-  Use this skill whenever the user requests frontend development, UI components, HTML, CSS, Blade templates, views, forms, buttons, tables, cards, navigation bars, or layout design for the CelIx project. Enforces the CelIx brand color palette, typography hierarchy, component styling rules, Bootstrap Icons, Bootstrap CSS utilities and JS components to reduce boilerplate, strict separation of CSS styles into global or component-specific CSS files, strict separation of JavaScript code into public JS files, mandatory responsive design across all devices (mobile, tablet, desktop), and modular architecture (layouts, reusable components, and views).
+  Use this skill whenever the user requests frontend development, UI components, HTML, CSS, Blade templates, views, forms, buttons, tables, cards, navigation bars, or layout design for the CelIx project. Enforces the CelIx brand color palette, typography hierarchy, component styling rules, Bootstrap Icons, Bootstrap CSS utilities, maximum usage of native Bootstrap 5 JS and data attributes to eliminate excessive or boilerplate JavaScript, backend server-side pagination and filters, strict separation of CSS styles into global or component-specific CSS files, strict separation of JavaScript code into public JS files, mandatory responsive design across all devices (mobile, tablet, desktop), and modular architecture (layouts, reusable components, and views).
 ---
 
 # CelIx Frontend & Design System Skill
@@ -195,44 +195,71 @@ Para garantizar la mantenibilidad del código, evitar archivos excesivamente lar
 
 ---
 
-## 9. Separación Estricta de Scripts JavaScript (Obligatorio)
+## 9. Separación Estricta y Mantenibilidad de Scripts JavaScript (Obligatorio)
 
-Para asegurar la correcta separación de responsabilidades, el mantenimiento escalable y la limpieza del código:
+Para asegurar la correcta separación de responsabilidades, la mantenibilidad del código y evitar archivos sobrecargados o difíciles de depurar:
 
 * **Prohibido incrustar código JavaScript en las vistas:** Nunca incluir bloques `<script>` con lógica o código inline directamente dentro de las plantillas o vistas Blade (`.blade.php`).
 * **Separación en archivos `.js` dedicados:**
   * Todo código JavaScript debe residir en archivos externos específicos dentro del directorio público de scripts (`public/js/`), debidamente estructurados por dominio o módulo funcional:
     * `public/js/auth/`: Scripts de autenticación y recuperación de cuenta (ej. `login.js`, `recover-password.js`).
     * `public/js/admin/`: Scripts de administración, dashboards y CRUDs (ej. `admin-navbar.js`, `users.js`).
+    * `public/js/receptionist/`: Scripts de recepción, ventas y atención (ej. `home.js`).
     * `public/js/components/`: Scripts asociados a componentes reutilizables cuando aplique.
+* **Tamaño Máximo y Enfoque Modular de Scripts:**
+  * **Prohibido el código monolítico ("God Scripts"):** Ningún script individual debe convertirse en un monolito de cientos de líneas que maneje múltiples responsabilidades no relacionadas. Los archivos `.js` de vistas deben mantenerse concisos (idealmente menores a 150–200 líneas).
+  * La lógica pesada de datos, paginación, filtros o cálculos masivos debe delegarse al backend (Laravel) o modularizarse en submódulos independientes con responsabilidad única (SRP).
 * **Vinculación en Blade:**
   * Cargar los scripts utilizando la directiva asset: `<script src="{{ asset('js/...') }}"></script>`.
   * En vistas que extienden de layouts maestros con pilas (`@stack('scripts')`), vincular el script específico mediante `@push('scripts') <script src="{{ asset('js/...') }}"></script> @endpush`.
 
 ---
 
-## 10. Uso de Bootstrap para Reducción de Reglas CSS y Código JS
+## 10. Uso Obligatorio de Bootstrap 5 para Reducción de JS y Prohibición de Código Excesivo
 
-Se permite y promueve el uso de las clases de utilidad y componentes de **Bootstrap** para acelerar el desarrollo, reducir la cantidad de reglas CSS personalizadas en archivos externos y disminuir la necesidad de código JavaScript manual:
+Se exige el uso prioritario de los componentes, utilidades y atributos de datos de **Bootstrap 5** para eliminar código JavaScript repetitivo o artesanal, reduciendo el boilerplate al mínimo posible:
 
-### A. Clases de Utilidad y Componentes CSS de Bootstrap
+### A. Prohibición de Reinvención de la Rueda (Server-Side Primero)
+* **Paginación, Filtros y Búsqueda en Backend:**
+  * Queda **estrictamente prohibido** implementar algoritmos de ordenamiento en memoria (algoritmos de burbuja, etc.), filtrado de tablas mediante manipulación masiva de filas en el DOM o paginadores manuales en JavaScript.
+  * Todas las tablas de datos con volumen variable deben procesarse en el **backend** utilizando Eloquent `paginate($perPage)->withQueryString()`, formularios `GET` y el paginador nativo `{{ $collection->links('pagination::bootstrap-5') }}`.
+
+### B. Aprovechamiento Obligatorio de Componentes y Data Attributes de Bootstrap 5 JS
+* **Modales sin Código JS Innecesario:**
+  * **Apertura y Cierre:** Usar exclusivamente atributos de datos HTML (`data-bs-toggle="modal"`, `data-bs-target="#idModal"` y `data-bs-dismiss="modal"`). Queda prohibido escribir funciones manuales `openModal()` o listeners de click que solo ejecuten `.show()` o `.hide()`.
+  * **Transferencia de Contexto y Datos (`show.bs.modal`):** En lugar de vincular listeners iterativos por fila con `querySelectorAll().forEach()`, los botones de acción deben contener atributos `data-bs-*` (ej. `data-bs-id`, `data-bs-name`, `data-bs-price`). El modal escuchará un único evento nativo `show.bs.modal` y extraerá la información limpia mediante `event.relatedTarget`:
+    ```javascript
+    const myModal = document.getElementById('myModal');
+    myModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
+        const id = button.getAttribute('data-bs-id');
+        // poblar campos directamente
+    });
+    ```
+* **Validación Nativa de Formularios:**
+  * Emplear las clases de validación de Bootstrap 5 (`class="needs-validation" novalidate` en `<form>`, y en JS evaluar `form.checkValidity()` añadiendo `form.classList.add('was-validated')`).
+  * Los mensajes de error deben ubicarse en contenedores `<div class="invalid-feedback">` en el HTML en lugar de crear alertas o elementos de error manuales en JavaScript.
+* **Notificaciones del Sistema (Prohibición de `alert()` y `confirm()`):**
+  * Queda **terminantemente prohibido** utilizar las ventanas modales nativas del navegador `alert()`, `confirm()` o `prompt()`.
+  * Utilizar en su lugar **Bootstrap Toasts** (`bootstrap.Toast.getOrCreateInstance(...)`) o componentes de alerta contextuales (`<x-alert />`, `.alert-dismissible`).
+* **Tooltips, Popovers y Dropdowns:**
+  * Emplear los inicializadores estándar de Bootstrap (`data-bs-toggle="tooltip"`, `data-bs-toggle="dropdown"`).
+
+### C. Clases de Utilidad y Componentes CSS de Bootstrap
 * **Grid y Flexbox:** Emplear las clases nativas de Bootstrap para alineación y maquetación (`container`, `row`, `col-*`, `d-flex`, `flex-column`, `flex-wrap`, `justify-content-*`, `align-items-*`, `gap-*`, etc.) en lugar de declarar reglas CSS repetitivas en archivos externos.
 * **Espaciado y Tipografía:** Aprovechar las utilidades estándar de margen y padding (`m-*`, `p-*`, `mb-3`, `me-2`, etc.), alineación (`text-center`, `text-end`), y pesos tipográficos (`fw-bold`, `fw-semibold`, `fs-6`).
-* **Componentes Base:** Se pueden utilizar clases estructurales de Bootstrap como `table`, `table-responsive`, `table-hover`, `card`, `card-body`, `badge`, `form-control`, `form-select`, `modal`, `modal-dialog`, `alert`, etc.
+* **Componentes Base:** Emplear clases estructurales de Bootstrap como `table`, `table-responsive`, `table-hover`, `card`, `card-body`, `badge`, `form-control`, `form-select`, `modal`, `modal-dialog`, `alert`, `toast`, etc.
 
-### B. Componentes Interactivos y JavaScript de Bootstrap
-* **Menús, Modales y Desplegables:** Se puede aprovechar la API oficial de Bootstrap JS (ej. `new bootstrap.Modal(...)`, `bootstrap.Collapse`) y sus atributos de datos (`data-bs-toggle="modal"`, `data-bs-dismiss="modal"`, `data-bs-target="..."`) para evitar escribir lógica manual de manipulación de DOM, backdrop o listeners de teclado en JavaScript.
-* **Ubicación del JS:** Cualquier script que inicialice o configure componentes de Bootstrap debe ubicarse en los archivos dedicados dentro de `public/js/`, respetando la separación estricta de scripts.
-
-### C. REGLA INQUEBRANTABLE: Respeto Estricto a los Estilos Iniciales de CelIx
-El uso de Bootstrap es una herramienta de optimización y reducción de código; **bajo ninguna circunstancia reemplaza ni degrada la identidad visual y directrices obligatorias de CelIx**:
+### D. REGLA INQUEBRANTABLE: Respeto Estricto a la Identidad y Paleta CelIx
+El uso intensivo de Bootstrap es para optimización y reducción de código; **bajo ninguna circunstancia reemplaza ni degrada la identidad visual y directrices obligatorias de CelIx**:
 1. **Paleta de Marca CelIx (Prohibido el azul por defecto de Bootstrap):**
-   * El color primario del proyecto es **Rojo CelIx (`#ED1C24`)** con hover `#C9141C`. Las clases `btn-primary`, enlaces activos, bordes de foco (`focus-ring`), switches activos o badges primarios deben sobrescribirse o personalizarse para mantener el rojo corporativo (`#ED1C24`), jamás utilizar el azul estándar (`#0d6efd`) de Bootstrap.
+   * El color primario del proyecto es **Rojo CelIx (`#ED1C24`)** con hover `#C9141C`. Las clases `btn-primary`, enlaces activos, bordes de foco (`focus-ring`), switches activos o badges primarios deben sobrescribirse para mantener el rojo corporativo (`#ED1C24`), jamás utilizar el azul estándar (`#0d6efd`) de Bootstrap.
    * Respetar rigurosamente los colores de fondo (`#F5F5F5`), superficie (`#FFFFFF`), texto principal (`#171717`), texto secundario (`#6B7280`) y bordes (`#E5E5E5`).
 2. **Tipografía del Sistema:** Debe mantenerse la tipografía sans-serif del sistema (`system-ui, -apple-system, Segoe UI, Roboto...`).
-3. **Cero Emojis y Uso Exclusivo de Bootstrap Icons:** Todo ícono debe ser de Bootstrap Icons (`bi bi-*`). Prohibido terminantemente el uso de emojis.
-4. **Prohibición de Estilos Inline en HTML:** No utilizar `style="..."` en las etiquetas HTML/Blade. Si una clase de Bootstrap requiere personalización o ajuste fino, debe aplicarse mediante una clase CSS en su respectivo archivo `.css`.
-5. **Separación de Archivos CSS y JS:** Toda regla de estilo personalizada o sobrescritura debe residir en sus respectivos archivos CSS (`public/css/`), y todo script en sus archivos JS (`public/js/`).
+3. **Cero Emojis y Uso Exclusivo de Bootstrap Icons:** Todo ícono debe ser de Bootstrap Icons (`bi bi-*`). Prohibido terminantemente el uso de emojis en cualquier vista, botón, título o alerta.
+4. **Prohibición de Estilos Inline en HTML:** No utilizar `style="..."` en las etiquetas HTML/Blade. Si una clase de Bootstrap requiere ajuste fino, debe aplicarse mediante una clase CSS en su respectivo archivo `.css`.
+5. **Separación de Archivos CSS y JS:** Toda regla de estilo personalizada debe residir en `public/css/` o `resources/css/`, y todo script en `public/js/`.
 6. **Diseño Responsivo Obligatorio:** Garantizar que todo layout, tabla, modal y formulario sea 100% responsivo y táctil en móviles, tablets y escritorios.
 
 

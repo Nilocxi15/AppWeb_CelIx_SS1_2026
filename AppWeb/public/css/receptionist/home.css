@@ -1,0 +1,188 @@
+/* ==========================================================================
+   Estilos Específicos de la Vista de Inicio de Recepcionista (CelIx)
+   ========================================================================== */
+
+/* Métricas Rápidas */
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.icon-primary {
+    background-color: rgba(237, 28, 36, 0.1);
+    color: var(--color-primary);
+}
+
+.icon-success {
+    background-color: var(--badge-success-bg);
+    color: var(--color-success);
+}
+
+.icon-warning {
+    background-color: var(--badge-warning-bg);
+    color: var(--color-warning);
+}
+
+/* Encabezados Ordenables de Datatable */
+.cursor-pointer {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sortable-th {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.sortable-th:hover {
+    background-color: #F1F3F5;
+}
+
+.sort-indicator {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.sortable-th.sorted-asc .sort-indicator {
+    color: var(--color-primary);
+}
+
+.sortable-th.sorted-desc .sort-indicator {
+    color: var(--color-primary);
+}
+
+/* Celdas y Miniaturas de Producto */
+.product-thumb-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 6px;
+    background-color: #F9FAFB;
+    overflow: hidden;
+}
+
+.product-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.barcode-badge {
+    background-color: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    border-radius: 4px;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.8rem;
+}
+
+.category-badge {
+    background-color: #EEF2FF;
+    color: #4338CA;
+    font-weight: 500;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 50px;
+    border: 1px solid #E0E7FF;
+}
+
+/* Badges de Estado de Stock */
+.badge-stock-ok {
+    background-color: var(--badge-success-bg);
+    color: var(--badge-success-text);
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+}
+
+.badge-stock-low {
+    background-color: var(--badge-warning-bg);
+    color: var(--badge-warning-text);
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+}
+
+.badge-stock-out {
+    background-color: var(--badge-error-bg);
+    color: var(--badge-error-text);
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+}
+
+/* Botones de Acción en Datatable */
+.btn-action {
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background-color: #FFFFFF;
+    color: var(--color-text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-action-view:hover {
+    background-color: #F3F4F6;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.btn-action-sale:hover {
+    background-color: rgba(237, 28, 36, 0.08);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* Iconos de Cabecera de Modal */
+.modal-title-icon {
+    width: 36px;
+    height: 36px;
+    background-color: rgba(237, 28, 36, 0.1);
+    color: var(--color-primary);
+    font-size: 1.15rem;
+}
+
+/* Modal de Visualización Detallada */
+.product-detail-image-box {
+    min-height: 180px;
+    background-color: #F9FAFB;
+}
+
+.fs-7 {
+    font-size: 0.8rem;
+}
+
+/* Tabla de Ítems en Registro de Venta */
+#saleItemsTable th,
+#saleItemsTable td {
+    font-size: 0.85rem;
+}
+
+.btn-remove-sale-item {
+    background: transparent;
+    border: none;
+    color: var(--color-error);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.btn-remove-sale-item:hover {
+    background-color: #FEE2E2;
+}
+
+.product-modal-img {
+    max-height: 180px;
+    object-fit: contain;
+}
+
+.sale-item-qty-col {
+    width: 110px;
+}

@@ -23,7 +23,7 @@ class AdminController extends Controller
     // Vista del módulo de gestión de usuarios
     public function manageUsers(Request $request)
     {
-        $filters = $request->only(['search', 'role', 'state']);
+        $filters = $request->only(['search', 'role', 'state', 'sort_by', 'sort_direction']);
         $perPage = (int) $request->input('per_page', 5);
 
         $users = $this->adminService->getUsersPaginated($filters, $perPage);
@@ -42,7 +42,7 @@ class AdminController extends Controller
     // Listar usuarios vía JSON (para APIs o recargas AJAX)
     public function showUsers(Request $request)
     {
-        $filters = $request->only(['search', 'role', 'state']);
+        $filters = $request->only(['search', 'role', 'state', 'sort_by', 'sort_direction']);
         $perPage = (int) $request->input('per_page', 5);
 
         $users = $this->adminService->getUsersPaginated($filters, $perPage);

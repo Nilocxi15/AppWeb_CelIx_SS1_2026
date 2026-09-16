@@ -71,8 +71,13 @@
     <!-- Contenedor Principal de Tabla y Filtros -->
     <section class="card border-0 shadow-sm mb-4 table-card">
         <!-- Barra de Búsqueda y Filtros con Grid de Bootstrap -->
+        <!-- Barra de Búsqueda y Filtros con Grid de Bootstrap -->
         <div class="card-body p-3 border-bottom filter-bar">
-            <form action="{{ route('admin.users.index') }}" method="GET" class="row g-2 align-items-center filter-form">
+            <form id="filterUsersForm" action="{{ route('admin.users.index') }}" method="GET" class="row g-2 align-items-center filter-form">
+                <input type="hidden" name="sort_by" value="{{ request('sort_by', 'created_at') }}">
+                <input type="hidden" name="sort_direction" value="{{ request('sort_direction', 'desc') }}">
+                <input type="hidden" name="per_page" id="hiddenPerPage" value="{{ request('per_page', '5') }}">
+
                 <!-- Búsqueda por texto -->
                 <div class="col-12 col-md-5 col-lg-4">
                     <div class="input-group">
@@ -112,7 +117,7 @@
                         <span>Filtrar</span>
                     </button>
 
-                    @if(request()->hasAny(['search', 'role', 'state']))
+                    @if(request()->hasAny(['search', 'role', 'state', 'sort_by']))
                         <a href="{{ route('admin.users.index') }}"
                             class="btn btn-outline-secondary d-inline-flex align-items-center gap-1"
                             title="Limpiar todos los filtros">
@@ -128,12 +133,49 @@
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 data-table">
                 <thead class="table-light">
+                    @php
+                        $currentSort = request('sort_by', 'created_at');
+                        $currentDir = request('sort_direction', 'desc');
+                        $getSortUrl = function($col) use ($currentSort, $currentDir) {
+                            $newDir = ($currentSort === $col && $currentDir === 'asc') ? 'desc' : 'asc';
+                            return request()->fullUrlWithQuery(['sort_by' => $col, 'sort_direction' => $newDir]);
+                        };
+                        $getSortIcon = function($col) use ($currentSort, $currentDir) {
+                            if ($currentSort !== $col) return 'bi-arrow-down-up text-muted';
+                            return $currentDir === 'asc' ? 'bi-sort-up text-primary fw-bold' : 'bi-sort-down text-primary fw-bold';
+                        };
+                    @endphp
                     <tr>
-                        <th scope="col" class="py-3 px-3">Usuario</th>
-                        <th scope="col" class="py-3 px-3">Correo Electrónico</th>
-                        <th scope="col" class="py-3 px-3">Rol Asignado</th>
-                        <th scope="col" class="py-3 px-3">Estado</th>
-                        <th scope="col" class="py-3 px-3">Fecha de Registro</th>
+                        <th scope="col" class="py-3 px-3">
+                            <a href="{{ $getSortUrl('name') }}" class="text-decoration-none text-dark d-flex align-items-center gap-1">
+                                <span>Usuario</span>
+                                <i class="bi {{ $getSortIcon('name') }}"></i>
+                            </a>
+                        </th>
+                        <th scope="col" class="py-3 px-3">
+                            <a href="{{ $getSortUrl('email') }}" class="text-decoration-none text-dark d-flex align-items-center gap-1">
+                                <span>Correo Electrónico</span>
+                                <i class="bi {{ $getSortIcon('email') }}"></i>
+                            </a>
+                        </th>
+                        <th scope="col" class="py-3 px-3">
+                            <a href="{{ $getSortUrl('role') }}" class="text-decoration-none text-dark d-flex align-items-center gap-1">
+                                <span>Rol Asignado</span>
+                                <i class="bi {{ $getSortIcon('role') }}"></i>
+                            </a>
+                        </th>
+                        <th scope="col" class="py-3 px-3">
+                            <a href="{{ $getSortUrl('state') }}" class="text-decoration-none text-dark d-flex align-items-center gap-1">
+                                <span>Estado</span>
+                                <i class="bi {{ $getSortIcon('state') }}"></i>
+                            </a>
+                        </th>
+                        <th scope="col" class="py-3 px-3">
+                            <a href="{{ $getSortUrl('created_at') }}" class="text-decoration-none text-dark d-flex align-items-center gap-1">
+                                <span>Fecha de Registro</span>
+                                <i class="bi {{ $getSortIcon('created_at') }}"></i>
+                            </a>
+                        </th>
                         <th scope="col" class="py-3 px-3 th-actions">Acciones</th>
                     </tr>
                 </thead>
@@ -159,56 +201,57 @@
                             <!-- Columna: Rol con Badge -->
                             <td>
                                 @php
-                                    $roleName = $user->role?->name ?? 'Sin Rol';
-                                    $badgeClass = match ($roleName) {
-                                        'ADMINISTRADOR' => 'badge-admin',
-                                        'RECEPCIONISTA' => 'badge-recep',
-                                        'TECNICO' => 'badge-tech',
-                                        default => 'badge-secondary'
-                                    };
+                                    $roleBadgeClasses = [
+                                        1 => 'badge-role-admin',
+                                        2 => 'badge-role-tech',
+                                        3 => 'badge-role-recep',
+                                    ];
+                                    $badgeClass = $roleBadgeClasses[$user->id_rol] ?? 'badge-role-default';
                                 @endphp
                                 <span class="badge {{ $badgeClass }}">
-                                    <i class="bi bi-shield-check"></i>
-                                    <span>{{ $roleName }}</span>
+                                    {{ $user->role->name ?? 'Sin Rol' }}
                                 </span>
                             </td>
 
-                            <!-- Columna: Estado con Badge -->
+                            <!-- Columna: Estado (Activo / Inactivo) -->
                             <td>
                                 @if ($user->state)
-                                    <span class="badge badge-active">
-                                        <i class="bi bi-check-circle-fill"></i>
+                                    <span class="badge badge-status-active">
+                                        <i class="bi bi-circle-fill badge-dot"></i>
                                         <span>Activo</span>
                                     </span>
                                 @else
-                                    <span class="badge badge-inactive">
-                                        <i class="bi bi-x-circle-fill"></i>
+                                    <span class="badge badge-status-inactive">
+                                        <i class="bi bi-circle-fill badge-dot"></i>
                                         <span>Inactivo</span>
                                     </span>
                                 @endif
                             </td>
 
-                            <!-- Columna: Fecha -->
-                            <td>{{ $user->created_at ? (is_string($user->created_at) ? $user->created_at : $user->created_at->format('d/m/Y')) : '-' }}
+                            <!-- Columna: Fecha de Creación -->
+                            <td class="text-muted small">
+                                {{ $user->created_at ? $user->created_at->format('d/m/Y H:i') : 'N/A' }}
                             </td>
 
-                            <!-- Columna: Acciones -->
+                            <!-- Columna: Acciones con Bootstrap 5 Modal Data Attributes -->
                             <td>
                                 <div class="action-buttons">
-                                    <!-- Botón Editar -->
+                                    <!-- Botón Editar con Bootstrap Modal -->
                                     <button type="button" class="btn-action btnEditUser" title="Editar datos del usuario"
-                                        data-id="{{ $user->id }}" data-name="{{ $user->name }}"
-                                        data-lastname="{{ $user->lastname }}" data-username="{{ $user->username }}"
-                                        data-email="{{ $user->email }}" data-role="{{ $user->id_rol }}"
-                                        data-state="{{ $user->state ? '1' : '0' }}">
+                                        data-bs-toggle="modal" data-bs-target="#editModal"
+                                        data-bs-id="{{ $user->id }}" data-bs-name="{{ $user->name }}"
+                                        data-bs-lastname="{{ $user->lastname }}" data-bs-username="{{ $user->username }}"
+                                        data-bs-email="{{ $user->email }}" data-bs-role="{{ $user->id_rol }}"
+                                        data-bs-state="{{ $user->state ? '1' : '0' }}">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
 
-                                    <!-- Botón Alternar Estado (Activar/Desactivar) -->
+                                    <!-- Botón Alternar Estado (Activar/Desactivar) con Bootstrap Modal -->
                                     <button type="button" class="btn-action btn-action-toggle btnToggleUser"
                                         title="{{ $user->state ? 'Desactivar usuario' : 'Activar usuario' }}"
-                                        data-id="{{ $user->id }}" data-name="{{ $user->name }} {{ $user->lastname }}"
-                                        data-username="{{ $user->username }}" data-state="{{ $user->state ? '1' : '0' }}">
+                                        data-bs-toggle="modal" data-bs-target="#toggleStateModal"
+                                        data-bs-id="{{ $user->id }}" data-bs-name="{{ $user->name }} {{ $user->lastname }}"
+                                        data-bs-username="{{ $user->username }}" data-bs-state="{{ $user->state ? '1' : '0' }}">
                                         @if ($user->state)
                                             <i class="bi bi-toggle-on toggle-icon-active"></i>
                                         @else
@@ -216,11 +259,12 @@
                                         @endif
                                     </button>
 
-                                    <!-- Botón Cambiar Contraseña -->
+                                    <!-- Botón Cambiar Contraseña con Bootstrap Modal -->
                                     <button type="button" class="btn-action btn-action-key btnChangePasswordUser"
-                                        title="Cambiar contraseña del usuario" data-id="{{ $user->id }}"
-                                        data-name="{{ $user->name }} {{ $user->lastname }}"
-                                        data-username="{{ $user->username }}">
+                                        title="Cambiar contraseña del usuario"
+                                        data-bs-toggle="modal" data-bs-target="#changePasswordModal"
+                                        data-bs-id="{{ $user->id }}"
+                                        data-bs-display="{{ $user->name }} {{ $user->lastname }} (@{{ $user->username }})">
                                         <i class="bi bi-key"></i>
                                     </button>
                                 </div>
@@ -244,55 +288,30 @@
         </div>
 
         <!-- Paginación de la Tabla con Componentes Bootstrap -->
-        <div
-            class="card-footer bg-white border-top p-3 d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 pagination-wrapper">
+        <div class="card-footer bg-white border-top p-3 d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 pagination-wrapper">
             <!-- Selector de Paginación Variable -->
             <div class="d-flex align-items-center gap-2 pagination-per-page">
                 <label for="perPageSelect" class="form-label mb-0 small text-muted per-page-label">Mostrar:</label>
-                <select id="perPageSelect" name="per_page" class="form-select form-select-sm w-auto select-per-page"
+                <select id="perPageSelect" class="form-select form-select-sm w-auto select-per-page"
                     aria-label="Cantidad de registros por página">
-                    <option value="5" {{ request('per_page', '5') == '5' ? 'selected' : '' }}>5</option>
-                    <option value="25" {{ request('per_page', '25') == '25' ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', '50') == '50' ? 'selected' : '' }}>50</option>
+                    <option value="5" {{ request('per_page', '5') == '5' ? 'selected' : '' }}>5 registros</option>
+                    <option value="10" {{ request('per_page', '5') == '10' ? 'selected' : '' }}>10 registros</option>
+                    <option value="25" {{ request('per_page', '5') == '25' ? 'selected' : '' }}>25 registros</option>
+                    <option value="50" {{ request('per_page', '50') == '50' ? 'selected' : '' }}>50 registros</option>
                 </select>
                 <span class="small text-muted per-page-info">registros por página</span>
             </div>
 
-            <!-- Contador de Registros -->
+            <!-- Contador de Registros Real -->
             <div class="small text-muted pagination-info" id="paginationInfo">
-                Mostrando <span class="fw-semibold text-dark" id="paginationStart">1</span> a <span
-                    class="fw-semibold text-dark" id="paginationEnd">5</span> de <span class="fw-semibold text-dark"
-                    id="paginationTotal">{{ $totalUsers }}</span> usuarios
+                Mostrando <span class="fw-semibold text-dark">{{ $users->firstItem() ?? 0 }}</span> a <span
+                    class="fw-semibold text-dark">{{ $users->lastItem() ?? 0 }}</span> de <span class="fw-semibold text-dark">{{ $users->total() }}</span> usuarios
             </div>
 
-            <!-- Controles de Navegación de Páginas -->
-            <nav class="pagination-nav" aria-label="Navegación de páginas">
-                <ul class="pagination pagination-sm mb-0 pagination-list" id="paginationList">
-                    <li class="page-item">
-                        <button type="button" class="page-link pagination-btn disabled" id="btnPrevPage"
-                            aria-disabled="true" title="Página anterior">
-                            <i class="bi bi-chevron-left"></i>
-                            <span>Anterior</span>
-                        </button>
-                    </li>
-                    <li class="page-item page-item-number">
-                        <button type="button" class="page-link pagination-btn active" data-page="1"
-                            aria-current="page">1</button>
-                    </li>
-                    <li class="page-item page-item-number" data-page-item="2">
-                        <button type="button" class="page-link pagination-btn" data-page="2">2</button>
-                    </li>
-                    <li class="page-item page-item-number" data-page-item="3">
-                        <button type="button" class="page-link pagination-btn" data-page="3">3</button>
-                    </li>
-                    <li class="page-item">
-                        <button type="button" class="page-link pagination-btn" id="btnNextPage" title="Página siguiente">
-                            <span>Siguiente</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                    </li>
-                </ul>
-            </nav>
+            <!-- Paginador Nativo de Bootstrap 5 -->
+            <div>
+                {{ $users->links('pagination::bootstrap-5') }}
+            </div>
         </div>
     </section>
 

@@ -44,7 +44,19 @@ class AdminService
             $query->where('state', (bool) $filters['state']);
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+        // Ordenamiento dinámico seguro mediante lista blanca
+        $allowedSorts = [
+            'name'       => 'name',
+            'email'      => 'email',
+            'role'       => 'id_rol',
+            'state'      => 'state',
+            'created_at' => 'created_at',
+        ];
+
+        $sortBy = $allowedSorts[$filters['sort_by'] ?? 'created_at'] ?? 'created_at';
+        $sortDirection = strtolower($filters['sort_direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderBy($sortBy, $sortDirection)->paginate($perPage)->withQueryString();
     }
 
     /**
