@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReceptionistController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/tecnico', function () {
         return 'Panel del Taller / Técnico - Bienvenido, ' . auth()->user()->name;
     })->name('technician.home');
+
+    // Perfil de Usuario Universal (Accesible para cualquier usuario autenticado)
+    Route::get('/perfil', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/perfil/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
 
 // Rutas protegidas para Administrador (sólo con sesión activa)

@@ -36,7 +36,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#perfil" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-dark">
+                    <a href="{{ route('profile.show') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('profile*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-person"></i>
                         <span>Perfil</span>
                     </a>

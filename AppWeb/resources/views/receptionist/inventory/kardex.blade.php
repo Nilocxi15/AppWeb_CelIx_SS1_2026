@@ -11,7 +11,7 @@
         <!-- Encabezado del Módulo y Acciones Principales -->
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
             <div>
-                <h1 class="h3 fw-bold text-dark mb-1">Historial de Movimientos de Inventario</h1>                
+                <h1 class="h3 fw-bold text-dark mb-1">Historial de Movimientos de Inventario (Kardex)</h1>                
             </div>
 
             <!-- Botones de Acción Superior Derecha -->

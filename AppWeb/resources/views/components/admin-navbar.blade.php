@@ -23,7 +23,7 @@
                 <li class="nav-item">
                     <a href="{{ route('admin.home') }}"
                         class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('admin.home') ? 'active fw-semibold text-primary' : 'text-dark' }}">
-                        <i class="bi bi-grid-1x2"></i>
+                        <i class="bi bi-house"></i>
                         <span>Inicio</span>
                     </a>
                 </li>
@@ -55,7 +55,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded">
+                    <a href="{{ route('profile.show') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('profile*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-person"></i>
                         <span>Perfil</span>
                     </a>
