@@ -16,6 +16,7 @@ class InventoryMovement extends Model
         'id_sale',
         'quantity',
         'movement_type',
+        'reason',
         'date',
     ];
 

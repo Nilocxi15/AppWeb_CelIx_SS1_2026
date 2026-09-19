@@ -21,6 +21,7 @@ class Product extends Model
         'stock',
         'minium_stock',
         'price',
+        'status',
         'image',
     ];
 
@@ -30,6 +31,7 @@ class Product extends Model
             'stock'        => 'integer',
             'minium_stock' => 'integer',
             'price'        => 'decimal:2',
+            'status'       => 'boolean',
         ];
     }
 

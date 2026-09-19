@@ -13,7 +13,15 @@ class CategoryProduct extends Model
     protected $fillable = [
         'name',
         'description',
+        'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => 'boolean',
+        ];
+    }
 
     /**
      * Productos que pertenecen a esta categoría.

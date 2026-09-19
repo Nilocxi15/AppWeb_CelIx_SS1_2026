@@ -13,9 +13,6 @@
             class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
             <div>
                 <h1 class="h3 fw-bold text-dark mb-1">Punto de Atención y Venta</h1>
-                <p class="text-muted mb-0 small">
-                    Gestión rápida de catálogo de venta, recepción de dispositivos y facturación para recepcionistas.
-                </p>
             </div>
 
             <!-- Botones en la parte superior derecha (arriba de la datatable) -->
@@ -48,7 +45,8 @@
                         <div>
                             <span class="text-muted small fw-medium d-block">Catálogo para Venta</span>
                             <h2 class="h4 fw-bold text-dark mb-0" id="statTotalProducts">
-                                {{ $kpis['totalProducts'] ?? count($products ?? []) }}</h2>
+                                {{ $kpis['totalProducts'] ?? count($products ?? []) }}
+                            </h2>
                         </div>
                     </div>
                 </div>
@@ -153,10 +151,10 @@
                                 <option value="">Todos los estados</option>
                                 <option value="disponible" {{ request('stock_status') === 'disponible' ? 'selected' : '' }}>En
                                     Stock (Normal)</option>
-                                <option value="bajo" {{ request('stock_status') === 'bajo' ? 'selected' : '' }}>Stock Bajo (<=
-                                        Mínimo)</option>
+                                <option value="bajo" {{ request('stock_status') === 'bajo' ? 'selected' : '' }}>Stock Bajo
+                                </option>
                                 <option value="agotado" {{ request('stock_status') === 'agotado' ? 'selected' : '' }}>Agotado
-                                    (0 unidades)</option>
+                                </option>
                             </select>
                         </div>
 
@@ -341,9 +339,23 @@
                         id="paginationTotal">{{ $products->total() }}</strong> productos
                 </div>
 
-                <div>
-                    {{ $products->links('pagination::bootstrap-5') }}
-                </div>
+                <nav aria-label="Paginación de productos">
+                    @if($products->hasPages())
+                        {{ $products->links('pagination::bootstrap-5') }}
+                    @else
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-left me-1"></i>Anterior</span>
+                            </li>
+                            <li class="page-item active">
+                                <span class="page-link">1</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Siguiente<i class="bi bi-chevron-right ms-1"></i></span>
+                            </li>
+                        </ul>
+                    @endif
+                </nav>
             </div>
         </div>
     </div>
@@ -746,8 +758,8 @@
     </div>
 
     <!-- ==========================================================================
-         BOOTSTRAP 5 TOAST CONTAINER: NOTIFICACIONES DEL SISTEMA
-         ========================================================================== -->
+                 BOOTSTRAP 5 TOAST CONTAINER: NOTIFICACIONES DEL SISTEMA
+                 ========================================================================== -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
         <div id="receptionistToast" class="toast align-items-center border-0 shadow" role="alert" aria-live="assertive"
             aria-atomic="true">

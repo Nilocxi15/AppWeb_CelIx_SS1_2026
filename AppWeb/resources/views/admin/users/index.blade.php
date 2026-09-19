@@ -203,26 +203,30 @@
                                 @php
                                     $roleBadgeClasses = [
                                         1 => 'badge-role-admin',
-                                        2 => 'badge-role-tech',
-                                        3 => 'badge-role-recep',
+                                        2 => 'badge-role-recep',
+                                        3 => 'badge-role-tech',
                                     ];
-                                    $badgeClass = $roleBadgeClasses[$user->id_rol] ?? 'badge-role-default';
+                                    $roleName = strtoupper(trim($user->role->name ?? ''));
+                                    $badgeClass = match ($roleName) {
+                                        'ADMINISTRADOR' => 'badge-role-admin',
+                                        'RECEPCIONISTA' => 'badge-role-recep',
+                                        'TECNICO', 'TÉCNICO' => 'badge-role-tech',
+                                        default => $roleBadgeClasses[$user->id_rol] ?? 'badge-role-default',
+                                    };
                                 @endphp
                                 <span class="badge {{ $badgeClass }}">
-                                    {{ $user->role->name ?? 'Sin Rol' }}
+                                    {{ $user->role->name ?? 'Sin Rol' }}                                    
                                 </span>
                             </td>
 
                             <!-- Columna: Estado (Activo / Inactivo) -->
                             <td>
                                 @if ($user->state)
-                                    <span class="badge badge-status-active">
-                                        <i class="bi bi-circle-fill badge-dot"></i>
+                                    <span class="badge badge-status-active">                                        
                                         <span>Activo</span>
                                     </span>
                                 @else
-                                    <span class="badge badge-status-inactive">
-                                        <i class="bi bi-circle-fill badge-dot"></i>
+                                    <span class="badge badge-status-inactive">                                        
                                         <span>Inactivo</span>
                                     </span>
                                 @endif
@@ -294,10 +298,10 @@
                 <label for="perPageSelect" class="form-label mb-0 small text-muted per-page-label">Mostrar:</label>
                 <select id="perPageSelect" class="form-select form-select-sm w-auto select-per-page"
                     aria-label="Cantidad de registros por página">
-                    <option value="5" {{ request('per_page', '5') == '5' ? 'selected' : '' }}>5 registros</option>
-                    <option value="10" {{ request('per_page', '5') == '10' ? 'selected' : '' }}>10 registros</option>
-                    <option value="25" {{ request('per_page', '5') == '25' ? 'selected' : '' }}>25 registros</option>
-                    <option value="50" {{ request('per_page', '50') == '50' ? 'selected' : '' }}>50 registros</option>
+                    <option value="5" {{ request('per_page', '5') == '5' ? 'selected' : '' }}>5</option>
+                    <option value="10" {{ request('per_page', '5') == '10' ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page', '5') == '25' ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', '50') == '50' ? 'selected' : '' }}>50</option>
                 </select>
                 <span class="small text-muted per-page-info">registros por página</span>
             </div>
@@ -308,10 +312,24 @@
                     class="fw-semibold text-dark">{{ $users->lastItem() ?? 0 }}</span> de <span class="fw-semibold text-dark">{{ $users->total() }}</span> usuarios
             </div>
 
-            <!-- Paginador Nativo de Bootstrap 5 -->
-            <div>
-                {{ $users->links('pagination::bootstrap-5') }}
-            </div>
+            <!-- Paginador de Usuarios -->
+            <nav aria-label="Paginación de usuarios">
+                @if($users->hasPages())
+                    {{ $users->links('pagination::bootstrap-5') }}
+                @else
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-left me-1"></i>Anterior</span>
+                        </li>
+                        <li class="page-item active">
+                            <span class="page-link">1</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Siguiente<i class="bi bi-chevron-right ms-1"></i></span>
+                        </li>
+                    </ul>
+                @endif
+            </nav>
         </div>
     </section>
 

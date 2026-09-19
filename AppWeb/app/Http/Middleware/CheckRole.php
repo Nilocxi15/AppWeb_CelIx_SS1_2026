@@ -17,6 +17,8 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
+        $roles = array_map('trim', $roles);
+
         // Validar que existe usuario logueado y que tenga la menos uno de los roles permitidos
         if (!$request->user() || !$request->user()->hasRole(...$roles)) {
             return redirect()->intended(app(AuthService::class)->redirectToDashboard())

@@ -24,13 +24,13 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#inventario" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-dark">
+                    <a href="{{ route('receptionist.inventory') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('receptionist.inventory*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-box-seam"></i>
                         <span>Inventario</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#historiales" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-dark">
+                    <a href="{{ route('receptionist.kardex') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('receptionist.kardex*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-clock-history"></i>
                         <span>Historiales</span>
                     </a>
@@ -41,6 +41,14 @@
                         <span>Perfil</span>
                     </a>
                 </li>
+                @if (auth()->user()->hasRole('ADMINISTRADOR')) <!-- Mostrar solo si el usuario es Administrador -->
+                    <li class="nav-item">
+                        <a href="{{ route('admin.home') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-dark">
+                            <i class="bi bi-gear"></i>
+                            <span>Panel de Administrador</span>
+                        </a>
+                    </li>
+                @endif
             </ul>
 
             <!-- Sección de Usuario y Cerrar Sesión -->

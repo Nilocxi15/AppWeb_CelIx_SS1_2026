@@ -23,8 +23,25 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); // Ruta para cerrar sesión
 
     // Panel Recepcionista
-    Route::get('/recepcion', [ReceptionistController::class, 'home'])->name('receptionist.home');
-    Route::post('/recepcion/ventas', [ReceptionistController::class, 'storeSale'])->name('receptionist.sales.store');
+    Route::middleware(['role:ADMINISTRADOR,RECEPCIONISTA'])->group(function () {
+        Route::get('/recepcion', [ReceptionistController::class, 'home'])->name('receptionist.home');
+        Route::post('/recepcion/ventas', [ReceptionistController::class, 'storeSale'])->name('receptionist.sales.store');
+
+        // Módulo de Inventario
+        Route::get('/recepcion/inventario', [ReceptionistController::class, 'inventory'])->name('receptionist.inventory');
+        Route::post('/recepcion/inventario/productos', [ReceptionistController::class, 'storeProduct'])->name('receptionist.inventory.products.store');
+        Route::put('/recepcion/inventario/productos/{barcode}', [ReceptionistController::class, 'updateProduct'])->name('receptionist.inventory.products.update');
+        Route::patch('/recepcion/inventario/productos/{barcode}/toggle-status', [ReceptionistController::class, 'toggleProductStatus'])->name('receptionist.inventory.products.toggle-status');
+
+        Route::post('/recepcion/inventario/categorias', [ReceptionistController::class, 'storeCategory'])->name('receptionist.inventory.categories.store');
+        Route::put('/recepcion/inventario/categorias/{id}', [ReceptionistController::class, 'updateCategory'])->name('receptionist.inventory.categories.update');
+        Route::patch('/recepcion/inventario/categorias/{id}/toggle-status', [ReceptionistController::class, 'toggleCategoryStatus'])->name('receptionist.inventory.categories.toggle-status');
+
+        Route::post('/recepcion/inventario/movimientos', [ReceptionistController::class, 'storeInventoryMovement'])->name('receptionist.inventory.movements.store');
+
+        // Módulo de Historiales (Kardex independiente)
+        Route::get('/recepcion/historiales', [ReceptionistController::class, 'kardex'])->name('receptionist.kardex');
+    });
 
     // Panel Técnico
     Route::get('/tecnico', function () {
@@ -60,7 +77,7 @@ Route::middleware(['auth', 'role:ADMINISTRADOR'])->prefix('admin')->name('admin.
 });
 
 // Rutas protegidas para Recepcionista (sólo con sesión activa)
-Route::middleware(['auth', 'role:ADMINISTRADOR, RECEPCIONISTA'])->prefix('receptionist')->name('receptionist.')->group(function () {
+Route::middleware(['auth', 'role:ADMINISTRADOR,RECEPCIONISTA'])->prefix('receptionist')->name('receptionist.')->group(function () {
     /**
      * Rutas para el módulo de la página de inicio
      */

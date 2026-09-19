@@ -61,6 +61,15 @@ class ReceptionistService
             }
         }
 
+        // Filtro por estado activo/inactivo (borrado lógico)
+        if (!empty($filters['status'])) {
+            if ($filters['status'] === 'activo') {
+                $query->where('status', true);
+            } elseif ($filters['status'] === 'inactivo') {
+                $query->where('status', false);
+            }
+        }
+
         // Ordenamiento dinámico seguro mediante lista blanca
         $allowedSorts = [
             'barcode'  => 'bar_code',
@@ -68,6 +77,7 @@ class ReceptionistService
             'name'     => 'name',
             'stock'    => 'stock',
             'price'    => 'price',
+            'status'   => 'status',
         ];
 
         $sortBy = $allowedSorts[$filters['sort_by'] ?? 'name'] ?? 'name';
@@ -226,6 +236,7 @@ class ReceptionistService
                     'id_sale'          => $sale->id,
                     'quantity'         => $quantity,
                     'movement_type'    => 'SALIDA',
+                    'reason'           => "Venta en mostrador #{$sale->id}",
                     'date'             => now(),
                 ]);
             }
@@ -243,5 +254,245 @@ class ReceptionistService
 
             return $sale->load(['details.product', 'receptionist']);
         });
+    }
+
+    /**
+     * Obtener métricas rápidas (KPIs) en tiempo real para el inventario.
+     */
+    public function getInventoryKPIs(): array
+    {
+        return [
+            'total_products'    => Product::count(),
+            'total_stock'       => (int) (Product::sum('stock') ?? 0),
+            'low_stock_count'   => Product::whereColumn('stock', '<=', 'minium_stock')->where('stock', '>', 0)->count(),
+            'active_categories' => CategoryProduct::where('status', true)->count(),
+        ];
+    }
+
+    /**
+     * Obtener categorías de productos con conteo de artículos y filtros para la pestaña de categorías.
+     */
+    public function getInventoryCategories(array $filters = []): Collection
+    {
+        $query = CategoryProduct::withCount('products');
+
+        if (!empty($filters['category_search'])) {
+            $search = mb_strtolower(trim($filters['category_search']));
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"]);
+            });
+        }
+
+        if (!empty($filters['category_status'])) {
+            if ($filters['category_status'] === 'activa') {
+                $query->where('status', true);
+            } elseif ($filters['category_status'] === 'inactiva') {
+                $query->where('status', false);
+            }
+        }
+
+        return $query->orderBy('name', 'asc')->get();
+    }
+
+    /**
+     * Registrar un nuevo producto en catálogo con movimiento inicial de Kardex si tiene stock.
+     */
+    public function storeProduct(array $data, int $userId): Product
+    {
+        return DB::transaction(function () use ($data, $userId) {
+            $product = Product::create([
+                'bar_code'     => $data['bar_code'],
+                'name'         => $data['name'],
+                'id_category'  => $data['id_category'],
+                'description'  => $data['description'] ?? null,
+                'price'        => $data['price'],
+                'stock'        => $data['stock'],
+                'minium_stock' => $data['minium_stock'],
+                'status'       => $data['status'] ?? true,
+            ]);
+
+            if ($product->stock > 0) {
+                InventoryMovement::create([
+                    'product_bar_code' => $product->bar_code,
+                    'id_user'          => $userId,
+                    'id_sale'          => null,
+                    'quantity'         => $product->stock,
+                    'movement_type'    => 'ENTRADA',
+                    'reason'           => 'Registro inicial de existencias en almacén',
+                    'date'             => now(),
+                ]);
+            }
+
+            return $product;
+        });
+    }
+
+    /**
+     * Actualizar los datos de un producto del catálogo.
+     */
+    public function updateProduct(string $barcode, array $data): Product
+    {
+        $product = Product::findOrFail($barcode);
+
+        $product->update([
+            'name'         => $data['name'],
+            'id_category'  => $data['id_category'],
+            'description'  => $data['description'] ?? null,
+            'price'        => $data['price'],
+            'minium_stock' => $data['minium_stock'],
+            'status'       => $data['status'] ?? $product->status,
+        ]);
+
+        return $product;
+    }
+
+    /**
+     * Alternar estado activo / inactivo de un producto (borrado lógico CelIx).
+     */
+    public function toggleProductStatus(string $barcode): Product
+    {
+        $product = Product::findOrFail($barcode);
+        $product->status = !$product->status;
+        $product->save();
+
+        return $product;
+    }
+
+    /**
+     * Registrar una nueva categoría de productos.
+     */
+    public function storeCategory(array $data): CategoryProduct
+    {
+        return CategoryProduct::create([
+            'name'        => $data['name'],
+            'description' => $data['description'] ?? null,
+            'status'      => $data['status'] ?? true,
+        ]);
+    }
+
+    /**
+     * Actualizar una categoría existente.
+     */
+    public function updateCategory(int $id, array $data): CategoryProduct
+    {
+        $category = CategoryProduct::findOrFail($id);
+        $category->update([
+            'name'        => $data['name'],
+            'description' => $data['description'] ?? null,
+            'status'      => $data['status'] ?? $category->status,
+        ]);
+
+        return $category;
+    }
+
+    /**
+     * Alternar estado activo / inactivo de una categoría (borrado lógico CelIx).
+     */
+    public function toggleCategoryStatus(int $id): CategoryProduct
+    {
+        $category = CategoryProduct::findOrFail($id);
+        $category->status = !$category->status;
+        $category->save();
+
+        return $category;
+    }
+
+    /**
+     * Registrar un movimiento de almacén (Entrada, Salida por baja/merma o Ajuste físico) con trazabilidad.
+     */
+    public function storeInventoryMovement(array $data, int $userId): InventoryMovement
+    {
+        return DB::transaction(function () use ($data, $userId) {
+            $product = Product::where('bar_code', $data['product_bar_code'])->lockForUpdate()->firstOrFail();
+
+            $type = $data['movement_type'];
+            $qty = (int) $data['quantity'];
+            $movementQty = $qty;
+
+            if ($type === 'ENTRADA') {
+                $product->increment('stock', $qty);
+            } elseif ($type === 'SALIDA') {
+                if ($product->stock < $qty) {
+                    throw ValidationException::withMessages([
+                        'quantity' => ["Stock insuficiente para procesar la baja. Stock actual disponible: {$product->stock} unidades."],
+                    ]);
+                }
+                $product->decrement('stock', $qty);
+                $movementQty = -$qty;
+            } elseif ($type === 'AJUSTE') {
+                $discrepancy = $qty - $product->stock;
+                $product->stock = $qty;
+                $product->save();
+                $movementQty = $discrepancy;
+            }
+
+            $reason = $data['reason'];
+            if (!empty($data['notes'])) {
+                $reason .= ' - ' . trim($data['notes']);
+            }
+
+            return InventoryMovement::create([
+                'product_bar_code' => $product->bar_code,
+                'id_user'          => $userId,
+                'id_sale'          => null,
+                'quantity'         => $movementQty,
+                'movement_type'    => $type,
+                'reason'           => $reason,
+                'date'             => now(),
+            ]);
+        });
+    }
+
+    /**
+     * Obtener movimientos de Kardex paginados con filtros de auditoría.
+     */
+    public function getKardexMovements(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        $query = InventoryMovement::with(['product.category', 'user', 'sale']);
+
+        if (!empty($filters['search'])) {
+            $search = mb_strtolower(trim($filters['search']));
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(product_bar_code) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(reason) LIKE ?', ["%{$search}%"])
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                  })
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(lastname) LIKE ?', ["%{$search}%"]);
+                  });
+            });
+        }
+
+        if (!empty($filters['movement_type'])) {
+            $query->where('movement_type', $filters['movement_type']);
+        }
+
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('date', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('date', '<=', $filters['date_to']);
+        }
+
+        return $query->orderBy('date', 'desc')->orderBy('id', 'desc')
+                     ->paginate($perPage)
+                     ->withQueryString();
+    }
+
+    /**
+     * Métricas rápidas (KPIs) para la vista de Kardex / Historiales.
+     */
+    public function getKardexKPIs(): array
+    {
+        return [
+            'total_movements' => InventoryMovement::count(),
+            'total_in'        => InventoryMovement::where('movement_type', 'ENTRADA')->count(),
+            'total_out'       => InventoryMovement::where('movement_type', 'SALIDA')->count(),
+            'total_adj'       => InventoryMovement::where('movement_type', 'AJUSTE')->count(),
+        ];
     }
 }

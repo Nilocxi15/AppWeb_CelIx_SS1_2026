@@ -68,9 +68,7 @@ class ExampleTest extends TestCase
         $response->assertSee('Anterior');
         $response->assertSee('Siguiente');
         $response->assertSee('Mostrando');
-        $response->assertSee('5 registros');
-        $response->assertSee('25 registros');
-        $response->assertSee('50 registros');
+        $response->assertSee('registros por página');
         $response->assertSee('Cambiar Contraseña de Usuario');
         $response->assertDontSee('¿Eliminar este usuario?');
     }
@@ -78,6 +76,21 @@ class ExampleTest extends TestCase
     public function test_receptionist_home_loads_with_required_elements(): void
     {
         $user = \App\Models\User::first();
+
+        $category = \App\Models\CategoryProduct::create([
+            'name' => 'Cargadores',
+            'description' => 'Cargadores y cables'
+        ]);
+
+        \App\Models\Product::create([
+            'bar_code' => '7401001001',
+            'id_category' => $category->id,
+            'name' => 'Cargador Rápido 25W',
+            'description' => 'Cargador Tipo-C',
+            'stock' => 10,
+            'minium_stock' => 5,
+            'price' => 145.00,
+        ]);
 
         $response = $this->actingAs($user)->get('/recepcion');
 
@@ -94,6 +107,56 @@ class ExampleTest extends TestCase
         $response->assertSee('Anterior');
         $response->assertSee('Siguiente');
     }
+
+    public function test_receptionist_inventory_loads_with_required_elements(): void
+    {
+        $user = \App\Models\User::first();
+
+        $category = \App\Models\CategoryProduct::create([
+            'name' => 'Cargadores y Cables',
+            'description' => 'Cargadores de pared'
+        ]);
+
+        \App\Models\Product::create([
+            'bar_code' => '7401001001',
+            'id_category' => $category->id,
+            'name' => 'Cargador Rápido 25W Ultra',
+            'description' => 'Cargador Tipo-C',
+            'stock' => 18,
+            'minium_stock' => 5,
+            'price' => 145.00,
+            'status' => true,
+        ]);
+
+        $response = $this->actingAs($user)->get('/recepcion/inventario');
+
+        $response->assertStatus(200);
+        $response->assertSee('Gestión de Inventario y Almacén');
+        $response->assertSee('Gestión de Productos');
+        $response->assertSee('Gestión de Categorías');
+        $response->assertDontSee('id="tab-movements"', false);
+        $response->assertSee('Registrar Movimiento');
+        $response->assertSee('Nueva Categoría');
+        $response->assertSee('Nuevo Producto');
+        $response->assertSee('Cargador Rápido 25W Ultra');
+        $response->assertSee('Cargadores y Cables');
+    }
+
+    public function test_receptionist_kardex_loads_with_required_elements(): void
+    {
+        $user = \App\Models\User::first();
+
+        $response = $this->actingAs($user)->get('/recepcion/historiales');
+
+        $response->assertStatus(200);
+        $response->assertSee('Historial de Movimientos de Inventario (Kardex)');
+        $response->assertSee('Movimientos Registrados');
+        $response->assertSee('Entradas de Mercancía');
+        $response->assertSee('Salidas y Bajas por Daño');
+        $response->assertSee('Ajustes de Conteo Físico');
+        $response->assertSee('Registrar Movimiento');
+    }
 }
+
 
 
