@@ -60,6 +60,12 @@
                         <span>Perfil</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.settings.index') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('admin.settings.*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
+                        <i class="bi bi-gear"></i>
+                        <span>Configuración</span>
+                    </a>
+                </li>
             </ul>
 
             <!-- Sección de Usuario y Salir -->

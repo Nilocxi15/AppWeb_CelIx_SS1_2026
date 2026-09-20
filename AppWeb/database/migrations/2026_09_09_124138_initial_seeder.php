@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     /**
@@ -11,16 +10,27 @@ return new class extends Migration {
     public function up(): void
     {
         DB::transaction(function () {
+            $now = now();
+
             // Inserción de roles
             DB::table('roles')->insert([
-                ['name' => 'ADMINISTRADOR',
-                'description' => 'Administrador del sistema.'
+                [
+                    'name' => 'ADMINISTRADOR',
+                    'description' => 'Administrador del sistema.',
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ],
-                ['name' => 'RECEPCIONISTA',
-                'description' => 'Encargado de recepción y atención al cliente.'
+                [
+                    'name' => 'RECEPCIONISTA',
+                    'description' => 'Encargado de recepción y atención al cliente.',
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ],
-                ['name' => 'TECNICO',
-                'description' => 'Encargado de reparación y mantenimiento de equipos.'
+                [
+                    'name' => 'TECNICO',
+                    'description' => 'Encargado de reparación y mantenimiento de equipos.',
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ],
             ]);
 
@@ -32,8 +42,18 @@ return new class extends Migration {
                     'username' => 'administrador',
                     'email' => 'iservicesanmarcos@gmail.com',
                     'password' => bcrypt('admin123'),
-                    'state' => true                    
-                ] 
+                    'state' => true,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            ]);
+
+            DB::table('device_types')->insert([
+                ['name' => 'Teléfono', 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'Tablet', 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'Laptop', 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'Consola', 'created_at' => $now, 'updated_at' => $now],
+                ['name' => 'Otros', 'created_at' => $now, 'updated_at' => $now],
             ]);
         });
     }

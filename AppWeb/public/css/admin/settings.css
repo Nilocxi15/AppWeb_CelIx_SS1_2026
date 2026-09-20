@@ -1,0 +1,201 @@
+/* ==========================================================================
+   Estilos para el Panel de Configuración del Administrador (CelIx)
+   ========================================================================== */
+
+/* Variables locales */
+:root {
+    --settings-accent: var(--color-primary, #ED1C24);
+    --settings-accent-hover: var(--color-primary-dark, #C9141C);
+}
+
+/* Header de la Página */
+.settings-header .page-title {
+    font-size: 1.65rem;
+    letter-spacing: -0.02em;
+}
+
+/* Tarjetas de Métricas Rápidas (KPIs) */
+.settings-stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--color-border, #E5E7EB);
+}
+
+.settings-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+.settings-stat-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.icon-types-primary {
+    background-color: rgba(237, 28, 36, 0.1);
+    color: var(--color-primary, #ED1C24);
+}
+
+.icon-types-success {
+    background-color: #DCFCE7;
+    color: #16A34A;
+}
+
+.icon-types-warning {
+    background-color: #FEE2E2;
+    color: #DC2626;
+}
+
+/* Pestañas de Navegación del Módulo de Configuración */
+.settings-tabs .nav-link {
+    font-weight: 500;
+    color: var(--color-text-muted, #6B7280);
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    transition: all 0.2s ease-in-out;
+    background: transparent;
+}
+
+.settings-tabs .nav-link:hover {
+    color: var(--settings-accent);
+    border-color: rgba(237, 28, 36, 0.3);
+}
+
+.settings-tabs .nav-link.active {
+    color: var(--settings-accent) !important;
+    font-weight: 600;
+    border-bottom: 2px solid var(--settings-accent) !important;
+    background-color: transparent !important;
+}
+
+/* Contenedor y Tabla de Datos */
+.settings-table-card {
+    border: 1px solid var(--color-border, #E5E7EB);
+}
+
+.settings-table th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted, #6B7280);
+    background-color: #F9FAFB;
+    padding: 0.85rem 1rem;
+    border-top: none;
+}
+
+.settings-table td {
+    padding: 0.9rem 1rem;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.settings-table tbody tr:hover {
+    background-color: #F9FAFB;
+}
+
+/* Iconos de Tipo de Dispositivo en Tabla */
+.device-type-icon-wrapper {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background-color: #F3F4F6;
+    color: #4B5563;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* Badges de Estado Activo e Inactivo */
+.badge-status-active {
+    background-color: var(--badge-success-bg, #DCFCE7);
+    color: var(--badge-success-text, #166534) !important;
+    border: 1px solid #BBF7D0;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-status-inactive {
+    background-color: var(--badge-error-bg, #FEE2E2);
+    color: var(--badge-error-text, #991B1B) !important;
+    border: 1px solid #FECACA;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Botones de Acción de Tabla */
+.btn-action-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+/* Diálogo de Confirmación de Cambio de Estado (Borrado Lógico) */
+.state-confirm-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin: 0 auto;
+}
+
+.state-confirm-icon-wrapper.icon-deactivate {
+    background-color: #FEE2E2;
+    color: #DC2626;
+}
+
+.state-confirm-icon-wrapper.icon-activate {
+    background-color: #DCFCE7;
+    color: #16A34A;
+}
+
+/* Input groups y buscadores */
+.search-input-group .input-group-text {
+    border-color: #D1D5DB;
+}
+
+.search-input-group .form-control {
+    border-color: #D1D5DB;
+}
+
+.search-input-group .form-control:focus {
+    border-color: var(--settings-accent);
+    box-shadow: 0 0 0 0.2rem rgba(237, 28, 36, 0.15);
+}
+
+/* Modales */
+.modal-header-custom {
+    border-bottom: 1px solid #E5E7EB;
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-body-custom {
+    padding: 1.5rem;
+}
+
+.modal-footer-custom {
+    border-top: 1px solid #E5E7EB;
+    padding: 1rem 1.5rem;
+}

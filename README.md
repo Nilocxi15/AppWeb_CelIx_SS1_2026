@@ -38,7 +38,7 @@ docker compose exec app php artisan migrate --seed
 
 ---
 
-## 🛠 Comandos Útiles de Docker
+## Comandos Útiles de Docker
 
 - **Ver estado de los contenedores:**
   ```bash

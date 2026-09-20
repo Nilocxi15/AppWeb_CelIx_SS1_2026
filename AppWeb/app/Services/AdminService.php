@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DeviceType;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -165,5 +166,88 @@ class AdminService
         $user->save();
 
         return $user;
+    }
+
+    /**
+     * Obtener tipos de dispositivos con filtros de búsqueda y paginación.
+     */
+    public function getDeviceTypesPaginated(array $filters, int $perPage): LengthAwarePaginator
+    {
+        $query = DeviceType::query();
+
+        // Búsqueda por nombre insensible a mayúsculas
+        if (!empty($filters['search'])) {
+            $search = mb_strtolower(trim($filters['search']));
+            $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+        }
+
+        // Filtro por estado (activo = '1', inactivo = '0')
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $query->where('status', (bool) $filters['status']);
+        }
+
+        $allowedSorts = [
+            'id'         => 'id',
+            'name'       => 'name',
+            'status'     => 'status',
+            'created_at' => 'created_at',
+        ];
+
+        $sortBy = $allowedSorts[$filters['sort_by'] ?? 'created_at'] ?? 'created_at';
+        $sortDirection = strtolower($filters['sort_direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderBy($sortBy, $sortDirection)->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Obtener métricas rápidas (KPIs) de los tipos de dispositivos.
+     */
+    public function getDeviceTypeStats(): array
+    {
+        return [
+            'total'    => DeviceType::count(),
+            'active'   => DeviceType::where('status', true)->count(),
+            'inactive' => DeviceType::where('status', false)->count(),
+        ];
+    }
+
+    /**
+     * Crear un nuevo tipo de dispositivo.
+     */
+    public function createDeviceType(array $data): DeviceType
+    {
+        return DeviceType::create([
+            'name'   => trim($data['name']),
+            'status' => isset($data['status']) ? (bool) $data['status'] : true,
+        ]);
+    }
+
+    /**
+     * Actualizar la información de un tipo de dispositivo existente.
+     */
+    public function updateDeviceType(int|string $id, array $data): DeviceType
+    {
+        $deviceType = DeviceType::findOrFail($id);
+        $deviceType->name = trim($data['name']);
+
+        if (isset($data['status'])) {
+            $deviceType->status = (bool) $data['status'];
+        }
+
+        $deviceType->save();
+
+        return $deviceType;
+    }
+
+    /**
+     * Alternar el estado (activo/inactivo) de un tipo de dispositivo (borrado lógico).
+     */
+    public function toggleDeviceTypeStatus(int|string $id): DeviceType
+    {
+        $deviceType = DeviceType::findOrFail($id);
+        $deviceType->status = !$deviceType->status;
+        $deviceType->save();
+
+        return $deviceType;
     }
 }

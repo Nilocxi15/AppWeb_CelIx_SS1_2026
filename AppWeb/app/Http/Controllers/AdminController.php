@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreDeviceTypeRequest;
 use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateDeviceTypeRequest;
 use App\Http\Requests\UpdateUserPasswordRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Services\AdminService;
@@ -126,5 +128,84 @@ class AdminController extends Controller
 
             return redirect()->route('admin.users.index')->with('error', $errorMessage);
         }
+    }
+
+    /**
+     * Vista principal del panel de configuración para el Administrador.
+     */
+    public function settings(Request $request)
+    {
+        $filters = $request->only(['search', 'status', 'sort_by', 'sort_direction']);
+        $perPage = (int) $request->input('per_page', 10);
+
+        $deviceTypes = $this->adminService->getDeviceTypesPaginated($filters, $perPage);
+        $deviceTypeStats = $this->adminService->getDeviceTypeStats();
+
+        return view('admin.settings.index', [
+            'deviceTypes'     => $deviceTypes,
+            'totalTypes'      => $deviceTypeStats['total'],
+            'activeTypes'     => $deviceTypeStats['active'],
+            'inactiveTypes'   => $deviceTypeStats['inactive'],
+            'activeTab'       => $request->input('tab', 'device_types'),
+        ]);
+    }
+
+    /**
+     * Registrar nuevo tipo de dispositivo.
+     */
+    public function storeDeviceType(StoreDeviceTypeRequest $request)
+    {
+        $deviceType = $this->adminService->createDeviceType($request->validated());
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'    => true,
+                'message'    => "Tipo de dispositivo '{$deviceType->name}' registrado exitosamente.",
+                'deviceType' => $deviceType,
+            ], 201);
+        }
+
+        return redirect()->route('admin.settings.index', ['tab' => 'device_types'])
+            ->with('success', "Tipo de dispositivo '{$deviceType->name}' registrado exitosamente.");
+    }
+
+    /**
+     * Actualizar tipo de dispositivo existente.
+     */
+    public function updateDeviceType(UpdateDeviceTypeRequest $request, $id)
+    {
+        $deviceType = $this->adminService->updateDeviceType($id, $request->validated());
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'    => true,
+                'message'    => "Tipo de dispositivo '{$deviceType->name}' actualizado exitosamente.",
+                'deviceType' => $deviceType,
+            ]);
+        }
+
+        return redirect()->route('admin.settings.index', ['tab' => 'device_types'])
+            ->with('success', "Tipo de dispositivo '{$deviceType->name}' actualizado exitosamente.");
+    }
+
+    /**
+     * Alternar estado (activo / inactivo) de un tipo de dispositivo (borrado lógico).
+     */
+    public function toggleDeviceTypeStatus(Request $request, $id)
+    {
+        $deviceType = $this->adminService->toggleDeviceTypeStatus($id);
+        $statusText = $deviceType->status ? 'activado' : 'desactivado';
+        $message = "El tipo de dispositivo '{$deviceType->name}' ha sido {$statusText} exitosamente.";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'status'  => $deviceType->status,
+            ]);
+        }
+
+        return redirect()->route('admin.settings.index', ['tab' => 'device_types'])
+            ->with('success', $message);
     }
 }

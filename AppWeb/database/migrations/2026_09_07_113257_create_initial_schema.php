@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -37,6 +38,7 @@ return new class extends Migration {
                 $table->id();
                 $table->string('name', 100)->unique();
                 $table->text('description')->nullable();
+                $table->boolean('status')->default(true);
                 $table->timestamps();
             });
 
@@ -50,6 +52,7 @@ return new class extends Migration {
                 $table->integer('minium_stock')->default(5);
                 $table->decimal('price', 10, 2);
                 $table->string('image')->nullable();
+                $table->boolean('status')->default(true);
                 $table->timestamps();
             });
 
@@ -67,6 +70,7 @@ return new class extends Migration {
             Schema::create('device_types', function (Blueprint $table) {
                 $table->id();
                 $table->string('name', 50)->unique();
+                $table->boolean('status')->default(true);
                 $table->timestamps();
             });
 
@@ -154,6 +158,7 @@ return new class extends Migration {
                 $table->foreignId('id_sale')->nullable()->constrained('sales')->onUpdate('cascade')->onDelete('set null');
                 $table->integer('quantity');
                 $table->enum('movement_type', ['ENTRADA', 'SALIDA', 'AJUSTE']);
+                $table->string('reason', 255)->nullable();
                 $table->timestamp('date')->useCurrent();
                 $table->timestamps();
             });
@@ -180,6 +185,16 @@ return new class extends Migration {
                 $table->boolean('is_used')->default(false);
                 $table->timestamps();
             });
+
+            // 15. Tabla de Sesiones (Laravel)
+            Schema::create('sessions', function (Blueprint $table) {
+                $table->string('id')->primary();
+                $table->foreignId('user_id')->nullable()->index();
+                $table->string('ip_address', 45)->nullable();
+                $table->text('user_agent')->nullable();
+                $table->longText('payload');
+                $table->integer('last_activity')->index();
+            });
         });
     }
 
@@ -203,6 +218,7 @@ return new class extends Migration {
             Schema::dropIfExists('category_products');
             Schema::dropIfExists('users');
             Schema::dropIfExists('roles');
+            Schema::dropIfExists('sessions');
         });
     }
 };

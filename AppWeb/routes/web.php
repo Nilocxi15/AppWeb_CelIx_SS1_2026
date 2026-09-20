@@ -79,6 +79,12 @@ Route::middleware(['auth', 'role:ADMINISTRADOR'])->prefix('admin')->name('admin.
 
     // Activar / Desactivar usuario
     Route::patch('/users/{id}/toggle-state', [AdminController::class, 'toggleUserState'])->name('users.toggle-state');
+
+    // Rutas para el módulo de configuración del sistema
+    Route::get('/configuracion', [AdminController::class, 'settings'])->name('settings.index');
+    Route::post('/configuracion/tipos-dispositivos', [AdminController::class, 'storeDeviceType'])->name('settings.device-types.store');
+    Route::put('/configuracion/tipos-dispositivos/{id}', [AdminController::class, 'updateDeviceType'])->name('settings.device-types.update');
+    Route::patch('/configuracion/tipos-dispositivos/{id}/toggle-status', [AdminController::class, 'toggleDeviceTypeStatus'])->name('settings.device-types.toggle-status');
 });
 
 // Rutas protegidas para Recepcionista (sólo con sesión activa)
