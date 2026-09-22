@@ -121,6 +121,15 @@ Route::middleware(['auth', 'role:ADMINISTRADOR,RECEPCIONISTA'])->prefix('recepti
     Route::post('/reception/entregas/{id}/entregar', [ReceptionistController::class, 'deliverTicket'])->name('deliveries.process');
 });
 
+// Rutas de compatibilidad en español para Recepción
+Route::middleware(['auth', 'role:ADMINISTRADOR,RECEPCIONISTA'])->group(function () {
+    Route::post('/recepcion/ventas', [ReceptionistController::class, 'storeSale']);
+    Route::put('/recepcion/inventario/productos/{barcode}', [ReceptionistController::class, 'updateProduct']);
+    Route::patch('/recepcion/inventario/productos/{barcode}/toggle-status', [ReceptionistController::class, 'toggleProductStatus']);
+    Route::put('/recepcion/inventario/categorias/{id}', [ReceptionistController::class, 'updateCategory']);
+    Route::patch('/recepcion/inventario/categorias/{id}/toggle-status', [ReceptionistController::class, 'toggleCategoryStatus']);
+});
+
 // Rutas protegidas para Técnico (sólo con sesión activa)
 Route::middleware(['auth', 'role:ADMINISTRADOR,TECNICO'])->prefix('technician')->name('technician.')->group(function () {
     /**

@@ -692,7 +692,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
-                <form id="registerSaleForm">
+                <form id="registerSaleForm" action="{{ route('receptionist.sales.store') }}" method="POST">
+                    @csrf
                     <div class="modal-body p-3 p-lg-4">
                         <!-- Fila Superior: Selector rápido para agregar artículos -->
                         <div class="card border rounded-3 p-3 bg-light mb-4">

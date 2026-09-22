@@ -323,7 +323,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
                 }
 
-                const response = await fetch('/recepcion/ventas', {
+                const endpoint = registerSaleForm.getAttribute('action') || '/receptionist/sales';
+
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

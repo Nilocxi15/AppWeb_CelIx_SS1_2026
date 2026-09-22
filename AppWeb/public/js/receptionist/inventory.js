@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!btn) return;
 
             const ds = btn.dataset;
-            editProductForm.action = `/recepcion/inventario/productos/${encodeURIComponent(ds.barcode)}`;
+            editProductForm.action = `/receptionist/reception/inventory/products/${encodeURIComponent(ds.barcode)}`;
 
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!btn) return;
 
                 const ds = btn.dataset;
-                toggleProductStateForm.action = `/recepcion/inventario/productos/${encodeURIComponent(ds.barcode)}/toggle-status`;
+                toggleProductStateForm.action = `/receptionist/reception/inventory/products/${encodeURIComponent(ds.barcode)}/toggle-status`;
 
                 const targetEl = document.getElementById("productStateTarget");
                 const promptEl = document.getElementById("productStatePrompt");
@@ -212,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!btn) return;
 
             const ds = btn.dataset;
-            editCategoryForm.action = `/recepcion/inventario/categorias/${encodeURIComponent(ds.id)}`;
+            editCategoryForm.action = `/receptionist/reception/inventory/categorias/${encodeURIComponent(ds.id)}`;
 
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!btn) return;
 
                 const ds = btn.dataset;
-                toggleCategoryStateForm.action = `/recepcion/inventario/categorias/${encodeURIComponent(ds.id)}/toggle-status`;
+                toggleCategoryStateForm.action = `/receptionist/reception/inventory/categorias/${encodeURIComponent(ds.id)}/toggle-status`;
 
                 const targetEl = document.getElementById("categoryStateTarget");
                 const promptEl = document.getElementById("categoryStatePrompt");
