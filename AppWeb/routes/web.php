@@ -4,6 +4,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReceptionistController;
+use App\Http\Controllers\TechnicianController;
+use App\Http\Controllers\TicketTrackingController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas exclusivas para invitados (usuarios no autenticados)
@@ -19,35 +21,13 @@ Route::middleware('guest')->group(function () {
     })->name('password.request');
 });
 
+// Rutas públicas de Seguimiento de Reparaciones mediante Código QR (sin restricción de sesión)
+Route::get('/seguimiento/{token}', [TicketTrackingController::class, 'show'])->name('tickets.tracking');
+Route::get('/seguimiento/{token}/pdf', [TicketTrackingController::class, 'downloadPdf'])->name('tickets.tracking.pdf');
+
 // Rutas protegidas (sólo usuarios con sesión activa)
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); // Ruta para cerrar sesión
-
-    // Panel Recepcionista
-    Route::middleware(['role:ADMINISTRADOR,RECEPCIONISTA'])->group(function () {
-        Route::get('/recepcion', [ReceptionistController::class, 'home'])->name('receptionist.home');
-        Route::post('/recepcion/ventas', [ReceptionistController::class, 'storeSale'])->name('receptionist.sales.store');
-
-        // Módulo de Inventario
-        Route::get('/recepcion/inventario', [ReceptionistController::class, 'inventory'])->name('receptionist.inventory');
-        Route::post('/recepcion/inventario/productos', [ReceptionistController::class, 'storeProduct'])->name('receptionist.inventory.products.store');
-        Route::put('/recepcion/inventario/productos/{barcode}', [ReceptionistController::class, 'updateProduct'])->name('receptionist.inventory.products.update');
-        Route::patch('/recepcion/inventario/productos/{barcode}/toggle-status', [ReceptionistController::class, 'toggleProductStatus'])->name('receptionist.inventory.products.toggle-status');
-
-        Route::post('/recepcion/inventario/categorias', [ReceptionistController::class, 'storeCategory'])->name('receptionist.inventory.categories.store');
-        Route::put('/recepcion/inventario/categorias/{id}', [ReceptionistController::class, 'updateCategory'])->name('receptionist.inventory.categories.update');
-        Route::patch('/recepcion/inventario/categorias/{id}/toggle-status', [ReceptionistController::class, 'toggleCategoryStatus'])->name('receptionist.inventory.categories.toggle-status');
-
-        Route::post('/recepcion/inventario/movimientos', [ReceptionistController::class, 'storeInventoryMovement'])->name('receptionist.inventory.movements.store');
-
-        // Módulo de Historiales (Kardex independiente)
-        Route::get('/recepcion/historiales', [ReceptionistController::class, 'kardex'])->name('receptionist.kardex');
-    });
-
-    // Panel Técnico
-    Route::get('/tecnico', function () {
-        return 'Panel del Taller / Técnico - Bienvenido, ' . auth()->user()->name;
-    })->name('technician.home');
 
     // Perfil de Usuario Universal (Accesible para cualquier usuario autenticado)
     Route::get('/perfil', [ProfileController::class, 'show'])->name('profile.show');
@@ -97,6 +77,63 @@ Route::middleware(['auth', 'role:ADMINISTRADOR,RECEPCIONISTA'])->prefix('recepti
 
     // Guardar venta (multi-artículos)
     Route::post('/sales', [ReceptionistController::class, 'storeSale'])->name('sales.store');
+
+    // Registrar recepción de dispositivo (Ticket de servicio)
+    Route::post('/reception/dispositivos', [ReceptionistController::class, 'storeDeviceIntake'])->name('devices.store');
+
+    // Descarga de ticket en formato PDF (etiqueta y comprobante)
+    Route::get('/tickets/{id}/pdf', [ReceptionistController::class, 'downloadTicketPdf'])->name('tickets.pdf');
+
+    /**
+     * Rutas para el módulo de Inventario
+     */
+    // Vista principal del módulo de inventario
+    Route::get('/reception/inventory', [ReceptionistController::class, 'inventory'])->name('inventory');
+
+    // Guardar producto
+    Route::post('/reception/inventory/products', [ReceptionistController::class, 'storeProduct'])->name('inventory.products.store');
+
+    // Actualizar producto y cambiar estado de producto
+    Route::put('/reception/inventory/products/{barcode}', [ReceptionistController::class, 'updateProduct'])->name('inventory.products.update');
+
+    // Cambiar estado de producto (activo/inactivo)
+    Route::patch('/reception/inventory/products/{barcode}/toggle-status', [ReceptionistController::class, 'toggleProductStatus'])->name('inventory.products.toggle-status');
+
+    // Guardar categoría de producto
+    Route::post('/reception/inventory/categorias', [ReceptionistController::class, 'storeCategory'])->name('inventory.categories.store');
+
+    // Actualizar categoría de producto
+    Route::put('/reception/inventory/categorias/{id}', [ReceptionistController::class, 'updateCategory'])->name('inventory.categories.update');
+
+    // Cambiar estado de categoría de producto (activo/inactivo)
+    Route::patch('/reception/inventory/categorias/{id}/toggle-status', [ReceptionistController::class, 'toggleCategoryStatus'])->name('inventory.categories.toggle-status');
+
+    // Guardar movimiento de inventario (entrada/salida)
+    Route::post('/reception/inventory/movimientos', [ReceptionistController::class, 'storeInventoryMovement'])->name('inventory.movements.store');
+
+    // Módulo de Historiales (Kardex independiente)
+    Route::get('/reception/historiales', [ReceptionistController::class, 'kardex'])->name('kardex');
+
+    // Módulo de Entregas de Dispositivos (Tickets Finalizados)
+    Route::get('/reception/entregas', [ReceptionistController::class, 'deliveries'])->name('deliveries');
+
+    // Procesar entrega de ticket
+    Route::post('/reception/entregas/{id}/entregar', [ReceptionistController::class, 'deliverTicket'])->name('deliveries.process');
+});
+
+// Rutas protegidas para Técnico (sólo con sesión activa)
+Route::middleware(['auth', 'role:ADMINISTRADOR,TECNICO'])->prefix('technician')->name('technician.')->group(function () {
+    /**
+     * Rutas para el módulo de la página de inicio
+     */
+    // Vista principal del panel de técnico
+    Route::get('/technician', [TechnicianController::class, 'home'])->name('home');
+    // Actualizar estado de ticket
+    Route::patch('/tickets/{id}/state', [TechnicianController::class, 'updateState'])->name('tickets.state');
+    // Guardar nota de ticket
+    Route::post('/tickets/{id}/notes', [TechnicianController::class, 'storeNote'])->name('tickets.notes.store');
+    // Listar notas de ticket
+    Route::get('/tickets/{id}/notes', [TechnicianController::class, 'getNotes'])->name('tickets.notes.list');
 });
 
 // Ruta pública de error 404

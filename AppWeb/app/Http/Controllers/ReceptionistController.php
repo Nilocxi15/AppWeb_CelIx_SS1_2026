@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DeliverTicketRequest;
 use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\StoreDeviceIntakeRequest;
 use App\Http\Requests\StoreInventoryMovementRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\StoreSaleRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Models\Ticket;
 use App\Services\ReceptionistService;
+use App\Services\TicketPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class ReceptionistController extends Controller
 {
@@ -28,12 +33,23 @@ class ReceptionistController extends Controller
         $filters = $request->only(['search', 'category', 'stock_status', 'sort_by', 'sort_direction']);
         $perPage = (int) $request->input('per_page', 10);
 
-        $products        = $this->receptionistService->getProductsPaginated($filters, $perPage);
-        $productsForSale = $this->receptionistService->getAllProductsForSale();
-        $kpis            = $this->receptionistService->getCatalogKPIs();
-        $categories      = $this->receptionistService->getCategories();
+        $products          = $this->receptionistService->getProductsPaginated($filters, $perPage);
+        $productsForSale   = $this->receptionistService->getAllProductsForSale();
+        $kpis              = $this->receptionistService->getCatalogKPIs();
+        $categories        = $this->receptionistService->getCategories();
+        $clients           = $this->receptionistService->getClients();
+        $activeTechnicians = $this->receptionistService->getActiveTechnicians();
+        $deviceTypes       = $this->receptionistService->getActiveDeviceTypes();
 
-        return view('receptionist.home', compact('products', 'productsForSale', 'kpis', 'categories'));
+        return view('receptionist.home', compact(
+            'products',
+            'productsForSale',
+            'kpis',
+            'categories',
+            'clients',
+            'activeTechnicians',
+            'deviceTypes'
+        ));
     }
 
     /**
@@ -229,5 +245,97 @@ class ReceptionistController extends Controller
         $allProducts = $this->receptionistService->getAllProductsForSale();
 
         return view('receptionist.inventory.kardex', compact('movements', 'kpis', 'allProducts'));
+    }
+
+    /**
+     * Vista de gestión de entregas y control integral de tickets de taller.
+     */
+    public function deliveries(Request $request): View
+    {
+        $filters = $request->only(['search', 'state', 'date_from', 'date_to']);
+        $perPage = (int) $request->input('per_page', 10);
+
+        $tickets = $this->receptionistService->getCompletedTicketsPaginated($filters, $perPage);
+        $kpis    = $this->receptionistService->getCompletedTicketsKPIs();
+
+        return view('receptionist.deliveries.index', compact('tickets', 'kpis'));
+    }
+
+    /**
+     * Procesar la entrega de un ticket finalizado, cambiar su estado a 'Entregado',
+     * estampar fecha de entrega y registrar movimiento en financial_transactions.
+     */
+    public function deliverTicket(DeliverTicketRequest $request, $id): JsonResponse|RedirectResponse
+    {
+        $ticket = $this->receptionistService->deliverTicket(
+            (int) $id,
+            $request->validated(),
+            auth()->id()
+        );
+
+        $message = "¡Ticket #{$ticket->id} entregado al cliente con éxito! Movimiento contable registrado en libro mayor.";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'ticket'  => $ticket,
+            ]);
+        }
+
+        return redirect()->route('receptionist.deliveries')->with('success', $message);
+    }
+
+    /**
+     * Registrar la recepción de un dispositivo, generar el ticket de servicio y emitir el código QR.
+     */
+    public function storeDeviceIntake(StoreDeviceIntakeRequest $request, TicketPdfService $pdfService): JsonResponse|RedirectResponse
+    {
+        $ticket = $this->receptionistService->registerDeviceIntake(
+            $request->validated(),
+            auth()->id()
+        );
+
+        $clientName = trim(($ticket->device->client->name ?? '') . ' ' . ($ticket->device->client->lastname ?? ''));
+        $message = "¡Ticket #{$ticket->id} registrado exitosamente para el cliente {$clientName}!";
+
+        $pdfUrl = route('receptionist.tickets.pdf', $ticket->id);
+        $trackingUrl = route('tickets.tracking', $ticket->qr_token);
+        $qrSvg = $pdfService->generateQrCodeSvg($trackingUrl, 180);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'      => true,
+                'message'      => $message,
+                'pdf_url'      => $pdfUrl,
+                'tracking_url' => $trackingUrl,
+                'qr_svg'       => $qrSvg,
+                'ticket'       => [
+                    'id'                => $ticket->id,
+                    'qr_token'          => $ticket->qr_token,
+                    'state'             => $ticket->state,
+                    'total_charged'     => (float) $ticket->total_charged,
+                    'deposit'           => (float) $ticket->deposit,
+                    'remaining_balance' => (float) $ticket->remaining_balance,
+                    'client'            => $clientName,
+                    'device'            => trim(($ticket->device->brand ?? '') . ' ' . ($ticket->device->model ?? '')),
+                    'technician'        => $ticket->technician ? trim($ticket->technician->name . ' ' . $ticket->technician->lastname) : 'No asignado',
+                    'intake_date'       => $ticket->intake_date ? $ticket->intake_date->format('d/m/Y H:i') : now()->format('d/m/Y H:i'),
+                ],
+            ], 201);
+        }
+
+        return redirect()->route('receptionist.home')->with('success', $message);
+    }
+
+    /**
+     * Descarga del ticket en PDF con etiqueta de taller y comprobante del cliente.
+     */
+    public function downloadTicketPdf(int $id, TicketPdfService $pdfService): SymfonyResponse
+    {
+        $ticket = Ticket::findOrFail($id);
+        $pdf = $pdfService->buildTicketPdf($ticket);
+
+        return $pdf->download("ticket-celix-TK-{$ticket->id}.pdf");
     }
 }

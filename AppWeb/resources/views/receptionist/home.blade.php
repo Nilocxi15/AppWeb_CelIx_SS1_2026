@@ -380,31 +380,80 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
-                <form id="registerDeviceForm">
+                <form id="registerDeviceForm" action="{{ route('receptionist.devices.store') }}" method="POST" novalidate>
+                    @csrf
                     <div class="modal-body p-3 p-lg-4">
                         <!-- Sección 1: Datos del Cliente -->
-                        <div class="modal-section-header mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                            <i class="bi bi-person text-primary"></i>
-                            <h3 class="h6 fw-bold text-dark mb-0">1. Información del Cliente</h3>
+                        <div
+                            class="modal-section-header mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-person text-primary"></i>
+                                <h3 class="h6 fw-bold text-dark mb-0">1. Información del Cliente</h3>
+                            </div>
                         </div>
 
-                        <div class="row g-3 mb-4">
+                        <!-- Selector de Modo de Cliente: Nuevo vs Existente -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-medium text-muted mb-2 d-block">Tipo de Cliente</label>
+                                <div class="btn-group w-100" role="group" aria-label="Modo de Selección de Cliente">
+                                    <input type="radio" class="btn-check" name="client_mode" id="client_mode_new"
+                                        value="new" checked autocomplete="off">
+                                    <label
+                                        class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center gap-2"
+                                        for="client_mode_new">
+                                        <i class="bi bi-person-plus"></i>
+                                        <span>Registrar Nuevo Cliente</span>
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="client_mode" id="client_mode_existing"
+                                        value="existing" autocomplete="off">
+                                    <label
+                                        class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center gap-2"
+                                        for="client_mode_existing">
+                                        <i class="bi bi-person-check"></i>
+                                        <span>Seleccionar Cliente Existente</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Desplegable para seleccionar cliente existente (inicialmente oculto) -->
+                            <div class="col-12 d-none" id="existingClientWrapper">
+                                <label for="existing_client_id" class="form-label fw-medium small">
+                                    Cliente Registrado <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="existing_client_id" name="existing_client_id">
+                                    <option value="" selected disabled>Selecciona un cliente del directorio...</option>
+                                    @foreach($clients ?? [] as $client)
+                                        <option value="{{ $client->id }}" data-name="{{ $client->name }}"
+                                            data-lastname="{{ $client->lastname }}" data-phone="{{ $client->phone }}"
+                                            data-dpi="{{ $client->dpi }}">
+                                            {{ $client->name }} {{ $client->lastname }} (Tel:
+                                            {{ $client->phone ?? 'Sin teléfono' }}{{ $client->dpi ? ' - DPI: ' . $client->dpi : '' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Campos de Datos del Cliente -->
+                        <div class="row g-3 mb-4" id="clientFieldsContainer">
                             <div class="col-12 col-md-6">
-                                <label for="client_name" class="form-label fw-medium">Nombres <span
+                                <label for="client_name" class="form-label fw-medium small">Nombres <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="client_name" name="client_name"
                                     placeholder="Ej. Juan Carlos" required>
                             </div>
 
                             <div class="col-12 col-md-6">
-                                <label for="client_lastname" class="form-label fw-medium">Apellidos <span
+                                <label for="client_lastname" class="form-label fw-medium small">Apellidos <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="client_lastname" name="client_lastname"
                                     placeholder="Ej. Gómez Pérez" required>
                             </div>
 
                             <div class="col-12 col-md-6">
-                                <label for="client_phone" class="form-label fw-medium">Teléfono / WhatsApp <span
+                                <label for="client_phone" class="form-label fw-medium small">Teléfono / WhatsApp <span
                                         class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light text-muted"><i
@@ -415,7 +464,7 @@
                             </div>
 
                             <div class="col-12 col-md-6">
-                                <label for="client_dpi" class="form-label fw-medium">DPI / Identificación</label>
+                                <label for="client_dpi" class="form-label fw-medium small">DPI / Identificación</label>
                                 <input type="text" class="form-control" id="client_dpi" name="client_dpi"
                                     placeholder="Ej. 2999123450901">
                             </div>
@@ -429,41 +478,38 @@
 
                         <div class="row g-3 mb-4">
                             <div class="col-12 col-md-4">
-                                <label for="device_type" class="form-label fw-medium">Tipo de Equipo <span
+                                <label for="device_type" class="form-label fw-medium small">Tipo de Equipo <span
                                         class="text-danger">*</span></label>
                                 <select class="form-select" id="device_type" name="device_type" required>
                                     <option value="" selected disabled>Seleccionar tipo...</option>
-                                    <option value="1">Celular / Smartphone</option>
-                                    <option value="2">Tablet</option>
-                                    <option value="3">Consola de Videojuegos</option>
-                                    <option value="4">Smartwatch</option>
-                                    <option value="5">Laptop / Computadora</option>
-                                    <option value="6">Otro dispositivo</option>
+                                    @foreach($deviceTypes ?? [] as $dType)
+                                        <option value="{{ $dType->id }}">{{ $dType->name }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
                             <div class="col-12 col-md-4">
-                                <label for="device_brand" class="form-label fw-medium">Marca <span
+                                <label for="device_brand" class="form-label fw-medium small">Marca <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="device_brand" name="device_brand"
                                     placeholder="Ej. Samsung, Apple, Xiaomi" required>
                             </div>
 
                             <div class="col-12 col-md-4">
-                                <label for="device_model" class="form-label fw-medium">Modelo <span
+                                <label for="device_model" class="form-label fw-medium small">Modelo <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="device_model" name="device_model"
                                     placeholder="Ej. Galaxy A54, iPhone 13" required>
                             </div>
 
                             <div class="col-12 col-md-6">
-                                <label for="device_serial" class="form-label fw-medium">Número de Serie o IMEI</label>
+                                <label for="device_serial" class="form-label fw-medium small">Número de Serie o IMEI</label>
                                 <input type="text" class="form-control" id="device_serial" name="device_serial"
                                     placeholder="Opcional pero recomendado">
                             </div>
 
                             <div class="col-12 col-md-6">
-                                <label for="device_password" class="form-label fw-medium">PIN / Contraseña de
+                                <label for="device_password" class="form-label fw-medium small">PIN / Contraseña de
                                     Desbloqueo</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light text-muted"><i class="bi bi-key"></i></span>
@@ -479,28 +525,93 @@
                             <h3 class="h6 fw-bold text-dark mb-0">3. Recepción y Falla Técnica</h3>
                         </div>
 
-                        <div class="row g-3">
+                        <div class="row g-3 mb-4">
                             <div class="col-12">
-                                <label for="reported_issue" class="form-label fw-medium">Falla Reportada por el Cliente
+                                <label for="reported_issue" class="form-label fw-medium small">Falla Reportada por el
+                                    Cliente
                                     <span class="text-danger">*</span></label>
                                 <textarea class="form-control" id="reported_issue" name="reported_issue" rows="2"
                                     placeholder="Describe claramente el problema reportado (no enciende, pantalla rota, no carga, etc.)"
                                     required></textarea>
                             </div>
 
-                            <div class="col-12 col-md-8">
-                                <label for="reception_notes" class="form-label fw-medium">Observaciones Iniciales (Estado
+                            <div class="col-12">
+                                <label for="reception_notes" class="form-label fw-medium small">Observaciones Iniciales
+                                    (Estado
                                     Físico)</label>
                                 <input type="text" class="form-control" id="reception_notes" name="reception_notes"
                                     placeholder="Ej. Rayones en tapa trasera, sin bandeja SIM, golpe en esquina superior">
                             </div>
+                        </div>
+
+                        <!-- Sección 4: Apartado Económico y Cobro -->
+                        <div class="modal-section-header mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+                            <i class="bi bi-cash-coin text-primary"></i>
+                            <h3 class="h6 fw-bold text-dark mb-0">4. Apartado Económico y Cobro</h3>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-4">
+                                <label for="total_charged" class="form-label fw-medium small">Costo del Trabajo (Q) <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-bold text-dark">Q</span>
+                                    <input type="number" step="0.01" min="0" class="form-control" id="total_charged"
+                                        name="total_charged" placeholder="0.00" value="0.00" required>
+                                </div>
+                            </div>
 
                             <div class="col-12 col-md-4">
-                                <label for="deposit" class="form-label fw-medium">Anticipo Abonado (Q)</label>
+                                <label for="deposit" class="form-label fw-medium small">Anticipo Abonado (Q) <span
+                                        class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light fw-bold text-dark">Q</span>
                                     <input type="number" step="0.01" min="0" class="form-control" id="deposit"
-                                        name="deposit" placeholder="0.00" value="0.00">
+                                        name="deposit" placeholder="0.00" value="0.00" required>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-medium small text-muted">Saldo Restante / Pendiente</label>
+                                <div class="border rounded-2 p-2 bg-light d-flex align-items-center justify-content-between"
+                                    style="min-height: 38px;">
+                                    <span class="small text-muted">Por Pagar:</span>
+                                    <strong class="fs-6 text-primary" id="remainingBalanceDisplay">Q 0.00</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección 5: Asignación de Técnico Especialista -->
+                        <div
+                            class="modal-section-header mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-person-badge text-primary"></i>
+                                <h3 class="h6 fw-bold text-dark mb-0">5. Asignación de Técnico</h3>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="id_user_technician" class="form-label fw-medium small">Técnico Asignado a la
+                                    Reparación</label>
+                                <select class="form-select" id="id_user_technician" name="id_user_technician">
+                                    <option value="" disabled {{ empty($activeTechnicians) ? 'selected' : '' }}>--
+                                        Seleccionar Especialista --</option>
+                                    @foreach($activeTechnicians ?? [] as $tech)
+                                        @php
+                                            $isSuggested = $loop->first;
+                                            $count = $tech->active_tickets_count ?? 0;
+                                        @endphp
+                                        <option value="{{ $tech->id }}" {{ $isSuggested ? 'selected' : '' }}>
+                                            {{ $tech->name }} {{ $tech->lastname }} (&#64;{{ $tech->username }})
+                                            {{ $isSuggested ? '- SUGERIDO' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text small text-muted">
+                                    El sistema sugiere automáticamente al
+                                    especialista con menor carga de trabajo activa. Se incluyen técnicos y administradores
+                                    habilitados.
                                 </div>
                             </div>
                         </div>
@@ -508,12 +619,55 @@
 
                     <div class="modal-footer bg-light border-top py-3">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2">
+                        <button type="submit" id="btnSubmitDeviceIntake" class="btn btn-primary d-inline-flex align-items-center gap-2">
                             <i class="bi bi-check-circle"></i>
                             <span>Guardar e Imprimir Ticket</span>
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMACIÓN: Código QR y Ticket Generado -->
+    <div class="modal fade" id="qrGeneratedModal" tabindex="-1" aria-labelledby="qrGeneratedModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-white border-bottom py-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle text-success p-2">
+                            <i class="bi bi-check2-circle fs-4"></i>
+                        </span>
+                        <div>
+                            <h2 class="h5 modal-title fw-bold text-dark mb-0" id="qrGeneratedModalLabel">¡Recepción Exitosa!</h2>
+                            <span class="small text-muted" id="qrModalFolioText">Ticket #TK-0000</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <div class="mb-3 d-inline-block p-3 border rounded-3 bg-light shadow-sm" id="qrModalSvgContainer">
+                        <!-- SVG del QR generado se inserta dinámicamente aquí -->
+                    </div>
+                    <h3 class="h6 fw-bold text-dark mb-1" id="qrModalDeviceText">Dispositivo</h3>
+                    <p class="small text-muted mb-2" id="qrModalClientText">Cliente</p>
+                    <p class="small text-secondary mb-3">
+                        Código QR generado para el seguimiento del dispositivo. El comprobante PDF con la etiqueta de taller se ha descargado automáticamente.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="#" id="qrModalDownloadPdfBtn" class="btn btn-primary d-flex align-items-center justify-content-center gap-2" target="_blank">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <span>Descargar Ticket y Etiqueta QR (PDF)</span>
+                        </a>
+                        <a href="#" id="qrModalTrackingUrlBtn" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2" target="_blank">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            <span>Ver Portal de Seguimiento en Tiempo Real</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -758,8 +912,8 @@
     </div>
 
     <!-- ==========================================================================
-                 BOOTSTRAP 5 TOAST CONTAINER: NOTIFICACIONES DEL SISTEMA
-                 ========================================================================== -->
+                                     BOOTSTRAP 5 TOAST CONTAINER: NOTIFICACIONES DEL SISTEMA
+                                     ========================================================================== -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
         <div id="receptionistToast" class="toast align-items-center border-0 shadow" role="alert" aria-live="assertive"
             aria-atomic="true">

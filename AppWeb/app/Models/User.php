@@ -65,4 +65,12 @@ class User extends Authenticatable
     {
         return in_array($this->role?->name, $roles, true);
     }
+
+    /**
+     * Tickets técnicos asignados a este usuario para reparación.
+     */
+    public function assignedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'id_user_technician', 'id');
+    }
 }

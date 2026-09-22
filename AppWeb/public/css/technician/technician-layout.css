@@ -1,0 +1,76 @@
+:root {
+    --technician-primary: #ED1C24;
+    --technician-primary-dark: #C9141C;
+    --technician-border: #E5E7EB;
+    --technician-text: #1F2937;
+    --technician-text-muted: #6B7280;
+}
+
+/* Marca y Logotipo */
+.technician-navbar .brand-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--technician-primary), var(--technician-primary-dark));
+    color: #FFFFFF;
+    font-size: 1.1rem;
+}
+
+.technician-navbar .brand-link {
+    text-decoration: none;
+    letter-spacing: -0.02em;
+}
+
+.technician-navbar .brand-highlight {
+    color: var(--technician-primary);
+}
+
+/* Enlaces de Navegación */
+.technician-navbar .nav-link {
+    color: var(--technician-text-muted);
+    font-size: 0.925rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.technician-navbar .nav-link:hover {
+    color: var(--technician-primary) !important;
+    background-color: rgba(237, 28, 36, 0.05);
+}
+
+.technician-navbar .nav-link.active {
+    color: var(--technician-primary) !important;
+    background-color: rgba(237, 28, 36, 0.08);
+}
+
+/* Píldora de Usuario */
+.user-info-pill {
+    font-size: 0.85rem;
+}
+
+.user-avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--technician-primary);
+    color: #FFFFFF;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.role-badge-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 700;
+    background-color: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+}
+
+/* Main y Footer */
+.technician-main {
+    min-height: calc(100vh - 130px);
+}

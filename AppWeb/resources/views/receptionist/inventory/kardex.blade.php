@@ -11,7 +11,7 @@
         <!-- Encabezado del Módulo y Acciones Principales -->
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
             <div>
-                <h1 class="h3 fw-bold text-dark mb-1">Historial de Movimientos de Inventario (Kardex)</h1>                
+                <h1 class="h3 fw-bold text-dark mb-1">Historial de Movimientos de Inventario</h1>                
             </div>
 
             <!-- Botones de Acción Superior Derecha -->
@@ -110,7 +110,7 @@
                         <!-- Filtro por Tipo de Movimiento -->
                         <div class="col-12 col-sm-6 col-md-3 col-xl-3">
                             <select name="movement_type" id="kardexTypeFilter" class="form-select" aria-label="Filtrar por tipo de movimiento">
-                                <option value="">Todos los tipos (Entrada, Salida, Ajuste)</option>
+                                <option value="">Todos los tipos</option>
                                 <option value="ENTRADA" {{ request('movement_type') === 'ENTRADA' ? 'selected' : '' }}>ENTRADA (Compras / Reingresos)</option>
                                 <option value="SALIDA" {{ request('movement_type') === 'SALIDA' ? 'selected' : '' }}>SALIDA (Ventas / Bajas por Daño)</option>
                                 <option value="AJUSTE" {{ request('movement_type') === 'AJUSTE' ? 'selected' : '' }}>AJUSTE (Conteo Físico / Discrepancias)</option>

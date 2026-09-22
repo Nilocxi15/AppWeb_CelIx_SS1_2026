@@ -1,0 +1,207 @@
+/* Variables locales */
+:root {
+    --deliveries-accent: var(--color-primary, #ED1C24);
+    --deliveries-accent-hover: var(--color-primary-dark, #C9141C);
+}
+
+/* Tarjetas de Métricas Rápidas (KPIs) */
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.icon-warning {
+    background-color: #FEF3C7;
+    color: #D97706;
+}
+
+.icon-danger {
+    background-color: #FEE2E2;
+    color: var(--deliveries-accent);
+}
+
+.icon-success {
+    background-color: #DCFCE7;
+    color: #16A34A;
+}
+
+.icon-info {
+    background-color: #E0F2FE;
+    color: #0284C7;
+}
+
+/* Iconos de Tipo de Dispositivo */
+.delivery-device-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background-color: #F3F4F6;
+    color: #4B5563;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+/* Badges de Estado del Ticket */
+.badge-state-recibido {
+    background-color: #E0F2FE;
+    color: #0369A1 !important;
+    border: 1px solid #BAE6FD;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-state-diagnostico {
+    background-color: #EDE9FE;
+    color: #6D28D9 !important;
+    border: 1px solid #DDD6FE;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-state-reparacion {
+    background-color: #FEF3C7;
+    color: #B45309 !important;
+    border: 1px solid #FDE68A;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-state-finalizado {
+    background-color: #DCFCE7;
+    color: #15803D !important;
+    border: 1px solid #BBF7D0;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-state-entregado {
+    background-color: #F3F4F6;
+    color: #4B5563 !important;
+    border: 1px solid #E5E7EB;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Badges de Saldo */
+.badge-balance-pending {
+    background-color: #FEE2E2;
+    color: #991B1B !important;
+    border: 1px solid #FECACA;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-balance-paid {
+    background-color: #DCFCE7;
+    color: #166534 !important;
+    border: 1px solid #BBF7D0;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Botones de Acción de Tabla */
+.btn-action-icon {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+/* Tabla de Entregas */
+.deliveries-table th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6B7280;
+    background-color: #F9FAFB;
+    padding: 0.85rem 1rem;
+    border-top: none;
+}
+
+.deliveries-table td {
+    padding: 0.9rem 1rem;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.deliveries-table tbody tr:hover {
+    background-color: #F9FAFB;
+}
+
+/* Modales Personalizados */
+.modal-header-custom {
+    border-bottom: 1px solid #E5E7EB;
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-body-custom {
+    padding: 1.5rem;
+}
+
+.modal-footer-custom {
+    border-top: 1px solid #E5E7EB;
+    padding: 1rem 1.5rem;
+}
+
+/* Desglose Económico en Modal */
+.breakdown-card {
+    background-color: #F9FAFB;
+    border: 1px solid #E5E7EB;
+}
+
+.breakdown-value-pending {
+    color: var(--deliveries-accent);
+    font-weight: 700;
+}
+
+/* Icono de Entrega Exitosa */
+.delivery-dialog-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #DCFCE7;
+    color: #16A34A;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}

@@ -1,6 +1,3 @@
-/**
- * CelIx - Script para la recuperación de contraseña
- */
 document.addEventListener('DOMContentLoaded', function () {
     // Alternar visibilidad de contraseña
     function setupPasswordToggle(toggleBtnId, inputId, iconId) {

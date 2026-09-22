@@ -1,7 +1,3 @@
-/* ==========================================================================
-   Estilos para el Panel de Configuración del Administrador (CelIx)
-   ========================================================================== */
-
 /* Variables locales */
 :root {
     --settings-accent: var(--color-primary, #ED1C24);

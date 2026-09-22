@@ -3,14 +3,20 @@
 namespace App\Services;
 
 use App\Models\CategoryProduct;
+use App\Models\Client;
+use App\Models\Device;
+use App\Models\DeviceType;
 use App\Models\FinancialTransaction;
 use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleDetail;
+use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ReceptionistService
@@ -494,5 +500,224 @@ class ReceptionistService
             'total_out'       => InventoryMovement::where('movement_type', 'SALIDA')->count(),
             'total_adj'       => InventoryMovement::where('movement_type', 'AJUSTE')->count(),
         ];
+    }
+
+    /**
+     * Obtener el catálogo de clientes ordenados alfabéticamente.
+     */
+    public function getClients(): Collection
+    {
+        return Client::orderBy('name', 'asc')->orderBy('lastname', 'asc')->get();
+    }
+
+    /**
+     * Obtener la lista de usuarios elegibles para atender reparaciones (Técnicos y Administradores activos),
+     * calculando su carga de trabajo en tickets activos (no finalizados ni entregados) para sugerir al de menor carga.
+     */
+    public function getActiveTechnicians(): Collection
+    {
+        return User::whereHas('role', function ($q) {
+            $q->whereIn(DB::raw('UPPER(name)'), ['TECNICO', 'TÉCNICO', 'ADMINISTRADOR']);
+        })
+        ->where('state', true)
+        ->with('role')
+        ->withCount(['assignedTickets as active_tickets_count' => function ($q) {
+            $q->whereNotIn('state', ['Finalizado', 'Entregado']);
+        }])
+        ->orderBy('active_tickets_count', 'asc')
+        ->orderBy('name', 'asc')
+        ->get();
+    }
+
+    /**
+     * Obtener los tipos de dispositivos activos.
+     */
+    public function getActiveDeviceTypes(): Collection
+    {
+        return DeviceType::where('status', true)->orderBy('name', 'asc')->get();
+    }
+
+    /**
+     * Obtener el listado de tickets de servicio técnico para el módulo de entregas,
+     * permitiendo visualizar todos los tickets y filtrar opcionalmente por estado.
+     */
+    public function getCompletedTicketsPaginated(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        $query = Ticket::with(['device.client', 'device.deviceType', 'technician', 'receptionist']);
+
+        // Filtro por estado de ticket (opcional)
+        if (!empty($filters['state'])) {
+            $query->where('state', $filters['state']);
+        }
+
+        // Filtro por término de búsqueda (ID ticket, cliente, teléfono, marca o modelo)
+        if (!empty($filters['search'])) {
+            $search = mb_strtolower(trim($filters['search']));
+            $query->where(function ($q) use ($search) {
+                if (is_numeric($search)) {
+                    $q->where('id', (int) $search);
+                }
+                $q->orWhereHas('device.client', function ($clientQ) use ($search) {
+                    $clientQ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(lastname) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(phone) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(dpi) LIKE ?', ["%{$search}%"]);
+                })
+                ->orWhereHas('device', function ($deviceQ) use ($search) {
+                    $deviceQ->whereRaw('LOWER(brand) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(model) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(serial_number) LIKE ?', ["%{$search}%"]);
+                });
+            });
+        }
+
+        // Filtro por rango de fechas de recepción
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('intake_date', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('intake_date', '<=', $filters['date_to']);
+        }
+
+        return $query->orderBy('id', 'desc')->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Obtener métricas rápidas (KPIs) sobre tickets de servicio técnico y entregas.
+     */
+    public function getCompletedTicketsKPIs(): array
+    {
+        return [
+            'in_workshop'          => Ticket::whereIn('state', ['Recibido', 'Diagnóstico', 'Reparación'])->count(),
+            'total_completed'      => Ticket::where('state', 'Finalizado')->count(),
+            'total_pending_amount' => (float) Ticket::where('state', 'Finalizado')->sum('remaining_balance'),
+            'delivered_today'      => Ticket::where('state', 'Entregado')->whereDate('return_date', today())->count(),
+            'total_delivered'      => Ticket::where('state', 'Entregado')->count(),
+            'collected_today'      => (float) FinancialTransaction::whereNotNull('id_ticket')
+                                        ->where('type', 'INGRESO')
+                                        ->whereDate('date', today())
+                                        ->sum('amount'),
+        ];
+    }
+
+    /**
+     * Procesar la entrega de un dispositivo reparado:
+     * - Cambia el estado del ticket a 'Entregado'.
+     * - Registra la fecha de entrega (return_date).
+     * - Si hay monto liquidado, crea un registro de INGRESO en financial_transactions.
+     */
+    public function deliverTicket(int $ticketId, array $data, int $userId): Ticket
+    {
+        return DB::transaction(function () use ($ticketId, $data, $userId) {
+            $ticket = Ticket::with(['device.client', 'device.deviceType'])->findOrFail($ticketId);
+
+            if ($ticket->state !== 'Finalizado') {
+                throw ValidationException::withMessages([
+                    'ticket' => 'Solo se pueden entregar tickets que se encuentren en estado Finalizado.',
+                ]);
+            }
+
+            $returnDate    = !empty($data['return_date']) ? $data['return_date'] : now();
+            $amountToPay   = isset($data['amount_to_pay']) ? (float) $data['amount_to_pay'] : (float) $ticket->remaining_balance;
+            $paymentMethod = $data['payment_method'] ?? 'EFECTIVO';
+
+            // Agregar notas de entrega si fueron provistas
+            if (!empty($data['delivery_notes'])) {
+                $notes = trim($ticket->reception_notes ? $ticket->reception_notes . "\n" : '');
+                $ticket->reception_notes = $notes . "[Nota de Entrega " . date('d/m/Y H:i') . "]: " . trim($data['delivery_notes']);
+            }
+
+            // Cambiar estado a Entregado y registrar fecha de entrega
+            $ticket->state       = 'Entregado';
+            $ticket->return_date = $returnDate;
+            $ticket->save();
+
+            // Registrar movimiento en el libro mayor financiero (financial_transactions) si hay monto liquidado
+            if ($amountToPay > 0) {
+                $brand  = $ticket->device->brand ?? 'Dispositivo';
+                $model  = $ticket->device->model ?? '';
+                $client = ($ticket->device->client->name ?? '') . ' ' . ($ticket->device->client->lastname ?? '');
+
+                FinancialTransaction::create([
+                    'id_sale'   => null,
+                    'id_ticket' => $ticket->id,
+                    'amount'    => $amountToPay,
+                    'type'      => 'INGRESO',
+                    'concept'   => "Liquidación y entrega de ticket #{$ticket->id} [{$brand} {$model}] - Cliente: {$client} [{$paymentMethod}]",
+                    'date'      => $returnDate,
+                ]);
+            }
+
+            return $ticket->fresh(['device.client', 'device.deviceType', 'financialTransactions']);
+        });
+    }
+
+    /**
+     * Registrar la recepción de un dispositivo generando el cliente (si es nuevo o asociando el existente),
+     * el dispositivo y el ticket de servicio asociado dentro de una transacción.
+     * Si se abona un anticipo, registra la transacción financiera correspondiente.
+     *
+     * @param array $data Datos validados de la recepción
+     * @param int $receptionistId ID del usuario recepcionista en sesión
+     * @return Ticket
+     */
+    public function registerDeviceIntake(array $data, int $receptionistId): Ticket
+    {
+        return DB::transaction(function () use ($data, $receptionistId) {
+            // 1. Resolver Cliente
+            if ($data['client_mode'] === 'existing') {
+                $client = Client::findOrFail($data['existing_client_id']);
+            } else {
+                $client = Client::create([
+                    'name'     => trim($data['client_name']),
+                    'lastname' => trim($data['client_lastname']),
+                    'phone'    => trim($data['client_phone']),
+                    'dpi'      => !empty($data['client_dpi']) ? trim($data['client_dpi']) : null,
+                ]);
+            }
+
+            // 2. Registrar Dispositivo
+            $device = Device::create([
+                'id_client'      => $client->id,
+                'id_device_type' => (int) $data['device_type'],
+                'brand'          => trim($data['device_brand']),
+                'model'          => trim($data['device_model']),
+                'serial_number'  => !empty($data['device_serial']) ? trim($data['device_serial']) : null,
+            ]);
+
+            // 3. Crear Ticket
+            $totalCharged = (float) $data['total_charged'];
+            $deposit = isset($data['deposit']) ? (float) $data['deposit'] : 0.0;
+            $technicianId = !empty($data['id_user_technician']) ? (int) $data['id_user_technician'] : null;
+
+            $ticket = Ticket::create([
+                'id_user_receptionist' => $receptionistId,
+                'id_device'            => $device->id,
+                'id_user_technician'   => $technicianId,
+                'state'                => 'Recibido',
+                'reported_issue'       => trim($data['reported_issue']),
+                'device_password'      => !empty($data['device_password']) ? trim($data['device_password']) : null,
+                'reception_notes'      => !empty($data['reception_notes']) ? trim($data['reception_notes']) : null,
+                'total_charged'        => $totalCharged,
+                'deposit'              => $deposit,
+                'qr_token'             => Str::uuid()->toString(),
+                'intake_date'          => now(),
+            ]);
+
+            // 4. Si hay anticipo mayor a 0, registrar la transacción financiera
+            if ($deposit > 0) {
+                FinancialTransaction::create([
+                    'id_sale'   => null,
+                    'id_ticket' => $ticket->id,
+                    'amount'    => $deposit,
+                    'type'      => 'INGRESO',
+                    'concept'   => "Anticipo por recepción de equipo Ticket #{$ticket->id} [{$device->brand} {$device->model}] - Cliente: {$client->name} {$client->lastname}",
+                    'date'      => now(),
+                ]);
+            }
+
+            return $ticket->fresh(['device.client', 'device.deviceType', 'technician', 'receptionist']);
+        });
     }
 }

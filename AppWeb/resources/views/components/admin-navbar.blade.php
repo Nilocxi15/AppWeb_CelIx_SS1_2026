@@ -31,14 +31,14 @@
                     <a href="{{ route('receptionist.home') }}"
                         class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('receptionist.*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-box"></i>
-                        <span>Apartado de Recepción</span>
+                        <span>Panel de Recepción</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{{ route('technician.home') }}"
                         class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('technician.*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-tools"></i>
-                        <span>Apartado de Técnico</span>
+                        <span>Panel de Técnico</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -55,13 +55,15 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('profile.show') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('profile*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
+                    <a href="{{ route('profile.show') }}"
+                        class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('profile*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-person"></i>
                         <span>Perfil</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('admin.settings.index') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('admin.settings.*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
+                    <a href="{{ route('admin.settings.index') }}"
+                        class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded {{ request()->routeIs('admin.settings.*') ? 'active fw-semibold text-primary' : 'text-dark' }}">
                         <i class="bi bi-gear"></i>
                         <span>Configuración</span>
                     </a>

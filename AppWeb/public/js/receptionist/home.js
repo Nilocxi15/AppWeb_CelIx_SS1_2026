@@ -364,26 +364,235 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Modal Registrar Dispositivo (Validación Nativa de Bootstrap 5)
+    // Modal Registrar Dispositivo (Interacción Dinámica: Cliente, Saldo Económico y Técnico)
     const registerDeviceForm = document.getElementById('registerDeviceForm');
     const registerDeviceModalEl = document.getElementById('registerDeviceModal');
 
     if (registerDeviceForm) {
-        registerDeviceForm.addEventListener('submit', function (e) {
+        const clientModeNew = document.getElementById('client_mode_new');
+        const clientModeExisting = document.getElementById('client_mode_existing');
+        const existingClientWrapper = document.getElementById('existingClientWrapper');
+        const existingClientSelect = document.getElementById('existing_client_id');
+        const clientStatusBadge = document.getElementById('clientSelectionStatusBadge');
+
+        const clientNameInput = document.getElementById('client_name');
+        const clientLastnameInput = document.getElementById('client_lastname');
+        const clientPhoneInput = document.getElementById('client_phone');
+        const clientDpiInput = document.getElementById('client_dpi');
+
+        const totalChargedInput = document.getElementById('total_charged');
+        const depositInput = document.getElementById('deposit');
+        const remainingBalanceDisplay = document.getElementById('remainingBalanceDisplay');
+
+        function setClientInputsReadonly(readonly) {
+            [clientNameInput, clientLastnameInput, clientPhoneInput, clientDpiInput].forEach(input => {
+                if (!input) return;
+                input.readOnly = readonly;
+                input.classList.toggle('bg-light', readonly);
+            });
+        }
+
+        function clearClientInputs() {
+            [clientNameInput, clientLastnameInput, clientPhoneInput, clientDpiInput].forEach(input => {
+                if (input) input.value = '';
+            });
+        }
+
+        if (clientModeNew && clientModeExisting) {
+            clientModeNew.addEventListener('change', function () {
+                if (this.checked) {
+                    if (existingClientWrapper) existingClientWrapper.classList.add('d-none');
+                    if (existingClientSelect) {
+                        existingClientSelect.value = '';
+                        existingClientSelect.required = false;
+                    }
+                    setClientInputsReadonly(false);
+                    clearClientInputs();
+                    if (clientStatusBadge) {
+                        clientStatusBadge.innerHTML = '<i class="bi bi-plus-circle me-1 text-primary"></i>Nuevo Registro';
+                        clientStatusBadge.className = 'badge bg-light text-muted border';
+                    }
+                }
+            });
+
+            clientModeExisting.addEventListener('change', function () {
+                if (this.checked) {
+                    if (existingClientWrapper) existingClientWrapper.classList.remove('d-none');
+                    if (existingClientSelect) existingClientSelect.required = true;
+                    setClientInputsReadonly(true);
+                    clearClientInputs();
+                    if (clientStatusBadge) {
+                        clientStatusBadge.innerHTML = '<i class="bi bi-person-check me-1 text-secondary"></i>Selecciona un cliente';
+                        clientStatusBadge.className = 'badge bg-secondary-subtle text-secondary border';
+                    }
+                }
+            });
+        }
+
+        if (existingClientSelect) {
+            existingClientSelect.addEventListener('change', function () {
+                const selectedOpt = this.options[this.selectedIndex];
+                if (!selectedOpt || !selectedOpt.value) {
+                    clearClientInputs();
+                    return;
+                }
+
+                if (clientNameInput) clientNameInput.value = selectedOpt.getAttribute('data-name') || '';
+                if (clientLastnameInput) clientLastnameInput.value = selectedOpt.getAttribute('data-lastname') || '';
+                if (clientPhoneInput) clientPhoneInput.value = selectedOpt.getAttribute('data-phone') || '';
+                if (clientDpiInput) clientDpiInput.value = selectedOpt.getAttribute('data-dpi') || '';
+
+                setClientInputsReadonly(true);
+
+                if (clientStatusBadge) {
+                    clientStatusBadge.innerHTML = '<i class="bi bi-check-circle-fill me-1 text-success"></i>Cliente Seleccionado';
+                    clientStatusBadge.className = 'badge bg-success-subtle text-success border border-success-subtle';
+                }
+            });
+        }
+
+        // Cálculo dinámico del saldo restante por pagar
+        function updateRemainingBalance() {
+            const cost = parseFloat(totalChargedInput ? totalChargedInput.value : 0) || 0;
+            const deposit = parseFloat(depositInput ? depositInput.value : 0) || 0;
+            const balance = Math.max(0, cost - deposit);
+
+            if (remainingBalanceDisplay) {
+                remainingBalanceDisplay.textContent = `Q ${balance.toFixed(2)}`;
+            }
+        }
+
+        if (totalChargedInput) totalChargedInput.addEventListener('input', updateRemainingBalance);
+        if (depositInput) depositInput.addEventListener('input', updateRemainingBalance);
+
+        const btnSubmitDeviceIntake = document.getElementById('btnSubmitDeviceIntake');
+
+        // Envío y Validación del Formulario al Backend
+        registerDeviceForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             if (!this.checkValidity()) {
                 e.stopPropagation();
                 this.classList.add('was-validated');
+                showToast('Por favor, completa correctamente todos los campos obligatorios.', 'danger');
                 return;
             }
 
-            showToast('Dispositivo registrado exitosamente para diagnóstico técnico.', 'success');
-            this.reset();
-            this.classList.remove('was-validated');
+            const totalCharged = parseFloat(totalChargedInput ? totalChargedInput.value : 0) || 0;
+            const deposit = parseFloat(depositInput ? depositInput.value : 0) || 0;
 
-            const modalInst = bootstrap.Modal.getInstance(registerDeviceModalEl);
-            if (modalInst) modalInst.hide();
+            if (deposit > totalCharged) {
+                showToast('El anticipo abonado no puede ser superior al costo del trabajo.', 'danger');
+                if (depositInput) depositInput.focus();
+                return;
+            }
+
+            const formData = new FormData(this);
+            const endpoint = this.getAttribute('action') || '/receptionist/reception/dispositivos';
+
+            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+
+            const submitBtn = btnSubmitDeviceIntake || this.querySelector('button[type="submit"]');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
+            try {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Registrando...';
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    let errorMsg = data.message || 'Error al registrar la recepción del dispositivo.';
+                    if (data.errors) {
+                        const errorList = Object.values(data.errors).flat().join(' ');
+                        errorMsg += ' ' + errorList;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                showToast(data.message || '¡Dispositivo y Ticket registrados exitosamente! Generando PDF...', 'success');
+
+                // Descargar o abrir automáticamente el PDF del ticket generado
+                if (data.pdf_url) {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.pdf_url;
+                    downloadLink.target = '_blank';
+                    downloadLink.rel = 'noopener noreferrer';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                }
+
+                registerDeviceForm.reset();
+                registerDeviceForm.classList.remove('was-validated');
+                setClientInputsReadonly(false);
+                if (existingClientWrapper) existingClientWrapper.classList.add('d-none');
+                if (clientModeNew) clientModeNew.checked = true;
+                if (clientStatusBadge) {
+                    clientStatusBadge.innerHTML = '<i class="bi bi-plus-circle me-1 text-primary"></i>Nuevo Registro';
+                    clientStatusBadge.className = 'badge bg-light text-muted border';
+                }
+                updateRemainingBalance();
+
+                const modalInst = bootstrap.Modal.getInstance(registerDeviceModalEl);
+                if (modalInst) modalInst.hide();
+
+                // Poblar y desplegar modal con el código QR generado
+                const qrModalEl = document.getElementById('qrGeneratedModal');
+                if (qrModalEl && window.bootstrap) {
+                    const qrModalFolioText = document.getElementById('qrModalFolioText');
+                    const qrModalDeviceText = document.getElementById('qrModalDeviceText');
+                    const qrModalClientText = document.getElementById('qrModalClientText');
+                    const qrModalSvgContainer = document.getElementById('qrModalSvgContainer');
+                    const qrModalDownloadPdfBtn = document.getElementById('qrModalDownloadPdfBtn');
+                    const qrModalTrackingUrlBtn = document.getElementById('qrModalTrackingUrlBtn');
+
+                    if (qrModalFolioText) qrModalFolioText.textContent = `#TK-${String(data.ticket?.id || 0).padStart(4, '0')}`;
+                    if (qrModalDeviceText) qrModalDeviceText.textContent = data.ticket?.device || 'Dispositivo';
+                    if (qrModalClientText) qrModalClientText.textContent = `Cliente: ${data.ticket?.client || 'Registrado'}`;
+                    if (qrModalSvgContainer && data.qr_svg) qrModalSvgContainer.innerHTML = data.qr_svg;
+                    if (qrModalDownloadPdfBtn && data.pdf_url) qrModalDownloadPdfBtn.href = data.pdf_url;
+                    if (qrModalTrackingUrlBtn && data.tracking_url) qrModalTrackingUrlBtn.href = data.tracking_url;
+
+                    bootstrap.Modal.getOrCreateInstance(qrModalEl).show();
+                }
+
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+            }
         });
+
+        // Limpiar estado al cerrar modal
+        if (registerDeviceModalEl) {
+            registerDeviceModalEl.addEventListener('hidden.bs.modal', function () {
+                registerDeviceForm.reset();
+                registerDeviceForm.classList.remove('was-validated');
+                setClientInputsReadonly(false);
+                if (existingClientWrapper) existingClientWrapper.classList.add('d-none');
+                if (clientModeNew) clientModeNew.checked = true;
+                if (clientStatusBadge) {
+                    clientStatusBadge.innerHTML = '<i class="bi bi-plus-circle me-1 text-primary"></i>Nuevo Registro';
+                    clientStatusBadge.className = 'badge bg-light text-muted border';
+                }
+                updateRemainingBalance();
+            });
+        }
     }
 });

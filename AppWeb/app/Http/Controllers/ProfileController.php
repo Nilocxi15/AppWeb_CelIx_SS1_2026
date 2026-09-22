@@ -18,8 +18,9 @@ class ProfileController extends Controller
         $user = auth()->user();
         $roleName = strtoupper(trim($user->role->name ?? ''));
         $layout = match ($roleName) {
-            'RECEPCIONISTA' => 'layouts.receptionist',
-            default         => 'layouts.admin',
+            'RECEPCIONISTA'      => 'layouts.receptionist',
+            'TECNICO', 'TÉCNICO' => 'layouts.technician',
+            default              => 'layouts.admin',
         };
 
         return view('profile.show', compact('user', 'layout'));

@@ -1,6 +1,3 @@
-/**
- * CelIx - Script para el formulario de inicio de sesión
- */
 document.addEventListener('DOMContentLoaded', function () {
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
